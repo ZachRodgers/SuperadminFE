@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import './Login.css';
 
-const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+const Login: React.FC = () => {
+  const [username, setUsername] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [error, setError] = useState<string>('');
 
   const handleLogin = () => {
     if (username === 'superadmin' && password === 'superadmin') {
-      localStorage.setItem('isAuthenticated', true);
+      localStorage.setItem('isAuthenticated', 'true'); // Store as a string
       window.location.href = '/dashboard'; // Redirect to Dashboard
     } else {
       setError('Invalid username or password');

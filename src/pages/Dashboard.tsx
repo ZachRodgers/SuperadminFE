@@ -5,17 +5,36 @@ import lotsData from '../data/Lots.json'; // Import JSON file
 
 const DEVICES_API_URL = 'http://localhost:5000/devices'; // Replace with actual devices.json API endpoint
 
-const Dashboard = () => {
-  const [lots, setLots] = useState([]);
-  const [devices, setDevices] = useState([]); // Store devices.json data
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortConfig, setSortConfig] = useState({ key: 'lotID', direction: 'ascending' });
+interface Lot {
+  lotID: string;
+  customer: string;
+  location: string;
+  purchaseDate: string;
+  adminPortal: string;
+}
+
+interface DeviceStatus {
+  online: number;
+  offline: number;
+  total: number;
+}
+
+interface SortConfig {
+  key: keyof Lot | null;
+  direction: 'ascending' | 'descending';
+}
+
+const Dashboard: React.FC = () => {
+  const [lots, setLots] = useState<Lot[]>([]);
+  const [devices, setDevices] = useState<string[]>([]); // Store devices.json data
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lotID', direction: 'ascending' });
 
   const navigate = useNavigate();
 
   useEffect(() => {
     // Parse Lots.json
-    const parsedLots = lotsData.map((item) => {
+    const parsedLots: Lot[] = lotsData.map((item: { data: string }) => {
       const [lotID, customer, location, purchaseDate, , adminPortal] = item.data.split('_');
       return {
         lotID,
@@ -44,7 +63,7 @@ const Dashboard = () => {
     fetchDevices();
   }, []);
 
-  const calculateDeviceStatus = (lotID) => {
+  const calculateDeviceStatus = (lotID: string): DeviceStatus => {
     const relevantDevices = devices.filter((device) => device.startsWith(lotID));
     const onlineCount = relevantDevices.filter((device) => !device.split('_')[1].includes('na')).length;
     const offlineCount = relevantDevices.length - onlineCount;
@@ -56,11 +75,11 @@ const Dashboard = () => {
     window.location.href = '/login';
   };
 
-  const handleOpenLot = (lotID) => {
+  const handleOpenLot = (lotID: string) => {
     navigate(`/lot/${lotID}/device-manager`);
   };
 
-  const normalizeString = (str) => {
+  const normalizeString = (str: string): string => {
     return str.toLowerCase().replace(/[-_]/g, ' ');
   };
 
@@ -85,8 +104,8 @@ const Dashboard = () => {
       return 0;
     });
 
-  const handleSort = (key) => {
-    let direction = 'ascending';
+  const handleSort = (key: keyof Lot) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
       direction = 'descending';
     }
@@ -123,7 +142,7 @@ const Dashboard = () => {
               {['lotID', 'customer', 'location', 'purchaseDate'].map((key) => (
                 <th
                   key={key}
-                  onClick={() => handleSort(key)}
+                  onClick={() => handleSort(key as keyof Lot)}
                   className="sortable-column"
                 >
                   {key === 'purchaseDate' ? 'Purchased' : key.charAt(0).toUpperCase() + key.slice(1)}

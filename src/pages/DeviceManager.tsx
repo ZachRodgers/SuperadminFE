@@ -5,12 +5,20 @@ import './DeviceManager.css';
 
 const API_URL = 'http://localhost:5000/devices';
 
-const DeviceManager = () => {
-  const { lotId } = useParams(); // Extract LotID from the URL
-  const [devices, setDevices] = useState([]);
+interface ParsedDevice {
+  id: string;
+  status: string;
+  updated: string;
+  network: string;
+  online: boolean;
+}
+
+const DeviceManager: React.FC = () => {
+  const { lotId } = useParams<{ lotId: string }>(); // Extract LotID from the URL
+  const [devices, setDevices] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalAction, setModalAction] = useState(null);
-  const [selectedDevice, setSelectedDevice] = useState(null);
+  const [modalAction, setModalAction] = useState<'add' | 'remove' | null>(null);
+  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDevices();
@@ -21,8 +29,8 @@ const DeviceManager = () => {
       const response = await fetch(API_URL);
       const data = await response.json();
       // Filter devices based on the current LotID
-      const filteredDevices = data.devices.filter((device) =>
-        device.startsWith(lotId)
+      const filteredDevices = data.devices.filter((device: string) =>
+        device.startsWith(lotId || '')
       );
       setDevices(filteredDevices);
     } catch (error) {
@@ -30,7 +38,7 @@ const DeviceManager = () => {
     }
   };
 
-  const getNextLotId = () => {
+  const getNextLotId = (): string => {
     const letters = 'abcdefghijklmnopqrstuvwxyz';
     for (let i = 0; i < letters.length; i++) {
       const nextId = `${lotId}${letters[i]}`;
@@ -41,13 +49,13 @@ const DeviceManager = () => {
     return `${lotId}z`; // Default to 'z' if no available ID
   };
 
-  const parseDate = (timestamp) => {
+  const parseDate = (timestamp: string | null): string => {
     if (!timestamp || timestamp === 'na') return 'Recently Added';
     const [date, time] = timestamp.split('T');
     return `${date.slice(0, 2)}/${date.slice(2, 4)}/${date.slice(4)} ${time}`;
   };
 
-  const parseDevice = (deviceString) => {
+  const parseDevice = (deviceString: string): ParsedDevice => {
     const [id, temp, timestamp, network] = deviceString.split('_');
     const isOnline = temp !== 'na';
     return {
@@ -76,7 +84,7 @@ const DeviceManager = () => {
     }
   };
 
-  const handleRemoveDevice = async (deviceId) => {
+  const handleRemoveDevice = async (deviceId: string) => {
     try {
       const response = await fetch(API_URL, {
         method: 'DELETE',
@@ -97,7 +105,7 @@ const DeviceManager = () => {
     setIsModalOpen(true);
   };
 
-  const openRemoveModal = (deviceId) => {
+  const openRemoveModal = (deviceId: string) => {
     setSelectedDevice(deviceId);
     setModalAction('remove');
     setIsModalOpen(true);
@@ -106,7 +114,7 @@ const DeviceManager = () => {
   const handleConfirmModal = () => {
     if (modalAction === 'add') {
       handleAddDevice();
-    } else if (modalAction === 'remove') {
+    } else if (modalAction === 'remove' && selectedDevice) {
       handleRemoveDevice(selectedDevice);
     }
   };

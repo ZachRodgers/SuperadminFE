@@ -1,10 +1,10 @@
 import React from 'react';
 
-const VehicleLog = () => {
+const VehicleLog: React.FC = () => {
     return (
         <div>
             <h1>Vehicle Log</h1>
-            <p>This is the Vehicle Log page. Add content here as needed.</p>
+            <p>Descriptive text here. Page WIP</p>
         </div>
     );
 };

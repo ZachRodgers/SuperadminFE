@@ -1,10 +1,10 @@
 import React from 'react';
 
-const Customer = () => {
+const Customer: React.FC = () => {
     return (
         <div>
             <h1>Customer</h1>
-            <p>This is the Customer page. Add content here as needed.</p>
+            <p>Descriptive text here. Page WIP</p>
         </div>
     );
 };

@@ -9,8 +9,8 @@ import Customer from './pages/Customer';
 import Sidebar from './components/Sidebar';
 import './App.css';
 
-const App = () => {
-  const isAuthenticated = localStorage.getItem('isAuthenticated');
+const App: React.FC = () => {
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
 
   return (
     <Router>

@@ -1,10 +1,10 @@
 import React from 'react';
 
-const BillingCalculator = () => {
+const BillingCalculator: React.FC = () => {
     return (
         <div>
             <h1>Billing Calculator</h1>
-            <p>This is the Billing Calculator page. Add content here as needed.</p>
+            <p>Descriptive text here. Page WIP</p>
         </div>
     );
 };

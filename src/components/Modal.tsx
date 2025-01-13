@@ -1,7 +1,16 @@
 import React from 'react';
 import './Modal.css';
 
-const Modal = ({ title, message, confirmText, cancelText, onConfirm, onCancel }) => {
+interface ModalProps {
+  title: string;
+  message: string;
+  confirmText: string;
+  cancelText: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+const Modal: React.FC<ModalProps> = ({ title, message, confirmText, cancelText, onConfirm, onCancel }) => {
   return (
     <div className="modal-overlay">
       <div className="modal">
