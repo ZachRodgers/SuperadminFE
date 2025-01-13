@@ -1,0 +1,226 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  background-color: #272A30;
+  color: #E5E5E5;
+  height: 100vh;
+}
+
+.dashboard-header {
+  background-color: #1E1F21; /* Full-width background */
+  width: 100%; /* Ensure background spans the entire page width */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-content {
+  max-width: 1280px; /* Constrain the content within 1280px */
+  margin: 0 auto; /* Center the content horizontally */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0px; /* Add consistent padding */
+  box-sizing: border-box;
+}
+
+.logo img {
+  height: 30px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+}
+
+.icon {
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.logout-btn {
+  padding: 10px 20px;
+  background-color: transparent;
+  border: 1.5px solid #E5E5E5;
+  color: #E5E5E5;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  background-color: #E5E5E5;
+  color: #272A30;
+}
+
+.dashboard-content {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 50px 0;
+}
+
+.search-bar {
+  display: flex;
+  height: 25px;
+  align-items: center;
+  background-color: #363941;
+  border-radius: 25px;
+  padding: 10px 20px;
+  margin-bottom: 20px;
+}
+
+.search-bar img {
+  width: 18px;
+  margin-right: 0px;
+}
+
+.search-bar input {
+  width: 100%;
+  background-color: transparent;
+  border: none;
+  color: #E5E5E5;
+  font-size: 16px;
+  margin-bottom: 0px;
+  outline: none;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* Fix column widths */
+}
+
+.dashboard-table th {
+  text-align: left;
+  padding: 25px 20px 25px 30px; /* Added extra left padding */
+  background-color: #272A30;
+  color: #E5E5E5;
+  font-weight: 800;
+}
+
+.dashboard-table td {
+  padding: 15px 20px 15px 30px; /* Added consistent left padding */
+  border-bottom: 0px solid #31343C;
+  cursor: pointer;
+  position: relative; /* Enable child element positioning */
+  white-space: nowrap; /* Prevent wrapping */
+  overflow: hidden; /* Hide overflow text */
+  text-overflow: ellipsis; /* Add ellipsis for long text */
+}
+
+/* Individual column widths */
+.dashboard-table th:nth-child(1),
+.dashboard-table td:nth-child(1) {
+  width: 10%; /* LotID column */
+}
+
+.dashboard-table th:nth-child(2),
+.dashboard-table td:nth-child(2) {
+  width: 25%; /* Customer column */
+}
+
+.dashboard-table th:nth-child(3),
+.dashboard-table td:nth-child(3) {
+  width: 25%; /* Location column */
+}
+
+.dashboard-table th:nth-child(4),
+.dashboard-table td:nth-child(4) {
+  width: 12%; /* Purchase Date column */
+}
+
+.dashboard-table th:nth-child(5),
+.dashboard-table td:nth-child(5) {
+  width: 18%; /* Devices column */
+}
+
+.dashboard-table th:nth-child(6),
+.dashboard-table td:nth-child(6) {
+  width: 10%; /* Admin Portal column */
+  text-align: center; /* Center-align the Admin Portal column */
+}
+
+.dashboard-table tr:nth-child(even) {
+  background-color: #31343C;
+  transition: all 0.2s ease;
+}
+
+.dashboard-table tr:nth-child(odd) {
+  background-color: #2B2E35;
+  transition: all 0.2s ease;
+}
+
+.dashboard-table tr:hover {
+  background-color: #E5E5E5;
+  color: #272A30;
+  transition: all 0.2s ease;
+}
+
+.dashboard-table tr:hover a {
+  color: #272A30; /* Ensure "Open" link stays distinct */
+  transition: all 0.2s ease;
+}
+
+.dashboard-table td a {
+  color: #ffffff;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.dashboard-table td a:hover {
+  text-decoration: underline; /* Add underline on hover */
+  transition: all 0.2s ease;
+}
+
+.dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #272A30;
+  margin-right: 4px;
+}
+
+.dot.green {
+  background-color: #33E733;
+}
+
+.dot.red {
+  background-color: #ED4343;
+}
+
+.sort-arrow {
+  width: 16px;
+  height: 16px;
+  margin-left: 8px;
+  margin-top: 5px;
+  transform: none;
+  transition: transform 0.2s ease, margin-top 0.2s ease; /* Animation for rotation and position */
+}
+
+.sort-arrow.descending {
+  transform: rotate(180deg);
+}
+
+.sortable-column {
+  cursor: pointer;
+  position: relative;
+}
+
+.extra-devices {
+  margin-left: 2px;
+  font-size: 14px;
+  color: #e5e5e5;
+  font-weight: 400;
+  vertical-align: top;
+  transition: color 0.2s ease; /* Smooth color transition */
+}
+
+.dashboard-table tr:hover .extra-devices {
+  color: #272A30; /* Changes to dark color when row is hovered */
+}

@@ -1,0 +1,104 @@
+.login-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #1E1F21;
+  margin: 0;
+  position: relative;
+}
+
+.login-box {
+  background-color: #272A30;
+  padding: 50px 120px;
+  border-radius: 10px;
+  border: 1.5px solid #363941;
+  text-align: center;
+  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 500px;
+  position: relative;
+  top: -70px;
+}
+
+.logo-superadmin {
+  width: 180px;
+  margin-bottom: 40px;
+}
+
+input {
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 15px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  background-color: #363941;
+  color: #ffffff;
+  caret-color: #1782ff;
+  box-sizing: border-box;
+  outline: none;
+}
+
+input::placeholder {
+  color: #606369;
+}
+
+input:focus {
+  background-color: #41444E;
+}
+
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #363941 inset; /* Changes autofill background to match input */
+  -webkit-text-fill-color: #9FCBFF; /* Changes text color for autofill */
+}
+
+button {
+  width: 100%;
+  padding: 15px;
+  background-color: #1782ff;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 20px;
+  margin-bottom: 20px; /* Adds spacing between the button and other elements */
+}
+
+button:hover {
+  background-color: #ffffff;
+  color: #3a3f47;
+}
+
+.error {
+  color: #FF7B7C;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+footer {
+  margin-top: 40px;
+}
+
+footer img {
+  width: 150px;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+footer img:hover {
+  opacity: 1;
+}
+
+.powered-by {
+  margin-top: auto; /* Pushes the footer to the bottom of the container */
+  text-align: center;
+  color: #8a8b8b;
+  font-size: 14px;
+  position: absolute;
+  bottom: 50px;
+}
