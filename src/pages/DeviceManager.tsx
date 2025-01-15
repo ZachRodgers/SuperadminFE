@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom'; // For extracting LotID from route
+import { useParams } from 'react-router-dom';
 import Modal from '../components/Modal';
 import './DeviceManager.css';
 
@@ -14,7 +14,7 @@ interface ParsedDevice {
 }
 
 const DeviceManager: React.FC = () => {
-  const { lotId } = useParams<{ lotId: string }>(); // Extract LotID from the URL
+  const { lotId } = useParams<{ lotId: string }>();
   const [devices, setDevices] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<'add' | 'remove' | null>(null);
@@ -28,7 +28,6 @@ const DeviceManager: React.FC = () => {
     try {
       const response = await fetch(API_URL);
       const data = await response.json();
-      // Filter devices based on the current LotID
       const filteredDevices = data.devices.filter((device: string) =>
         device.startsWith(lotId || '')
       );
@@ -49,11 +48,40 @@ const DeviceManager: React.FC = () => {
     return `${lotId}z`; // Default to 'z' if no available ID
   };
 
-  const parseDate = (timestamp: string | null): string => {
+  const getRelativeTime = (timestamp: string | null, isOnline: boolean): string => {
     if (!timestamp || timestamp === 'na') return 'Recently Added';
-    const [date, time] = timestamp.split('T');
-    return `${date.slice(0, 2)}/${date.slice(2, 4)}/${date.slice(4)} ${time}`;
+  
+    const parsedDate = new Date(timestamp);
+    if (isNaN(parsedDate.getTime())) return 'Invalid date';
+  
+    const now = new Date();
+    const diffMs = now.getTime() - parsedDate.getTime();
+    const diffSeconds = Math.round(diffMs / 1000);
+    const diffMinutes = Math.round(diffSeconds / 60);
+    const diffHours = Math.round(diffMinutes / 60);
+    const diffDays = Math.round(diffHours / 24);
+  
+    if (diffSeconds < 60) {
+      const roundedSeconds = Math.round(diffSeconds / 10) * 10;
+      return `${isOnline ? 'Last updated' : 'Last seen'} ${roundedSeconds} seconds ago`;
+    } else if (diffMinutes < 60) {
+      return `${isOnline ? 'Last updated' : 'Last seen'} ${diffMinutes} mins ago`;
+    } else if (diffHours < 24) {
+      return `${isOnline ? 'Last updated' : 'Last seen'} ${diffHours} hours ago`;
+    } else if (diffDays <= 7) {
+      return `${isOnline ? 'Last updated' : 'Last seen'} ${diffDays} days ago`;
+    } else {
+      const options: Intl.DateTimeFormatOptions = {
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      };
+      return `${isOnline ? 'Last updated' : 'Last seen'} ${parsedDate.toLocaleString('en-US', options)}`;
+    }
   };
+  
 
   const parseDevice = (deviceString: string): ParsedDevice => {
     const [id, temp, timestamp, network] = deviceString.split('_');
@@ -61,11 +89,11 @@ const DeviceManager: React.FC = () => {
     return {
       id,
       status: isOnline ? `Online ${temp.replace('C', '°C')}` : 'Offline',
-      updated: parseDate(timestamp),
+      updated: getRelativeTime(timestamp, isOnline),
       network: network !== 'na' ? network : 'N/A',
       online: isOnline,
     };
-  };
+  };  
 
   const handleAddDevice = async () => {
     const newDeviceId = getNextLotId();
