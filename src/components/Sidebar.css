@@ -83,27 +83,32 @@
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-.sidebar .menu li a {
-  padding: 15px 20px;
+/* Added button styling */
+.sidebar .menu li button {
+  all: unset; /* Reset button-specific styles */
+  padding: 15px 2px 15px 20px;
+  border-radius: 5px;
   text-decoration: none;
   color: inherit;
   display: inline-block;
   transition: color 0.3s ease, background-color 0.3s ease;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
 }
 
-.sidebar .menu li.active a {
+.sidebar .menu li.active button {
   background-color: #ffffff;
   color: #1782ff;
   font-weight: 600;
-  padding: 15px 20px;
+  padding: 15px 10px;
   border-radius: 5px;
   display: inline-block;
   text-align: center;
-  min-width: calc(100% - 40px);
   pointer-events: none; /* Disable hover and click events */
 }
 
-.sidebar .menu li:hover:not(.active) a {
+.sidebar .menu li:hover:not(.active) button {
   background-color: #272a30;
   border-radius: 5px;
   color: #ffffff;
@@ -118,13 +123,16 @@
   gap: 40px;
 }
 
-.sidebar .footer a {
+/* Footer button styling */
+.sidebar .footer button {
+  all: unset; /* Reset button-specific styles */
   color: #e5e5e5;
   text-decoration: none;
-  transition: text-decoration 0.3s ease, color 0.3s ease; /* Smooth transition for hover effect */
+  cursor: pointer;
+  transition: text-decoration 0.3s ease, color 0.3s ease;
 }
 
-.sidebar .footer a:hover {
+.sidebar .footer button:hover {
   text-decoration: underline;
   color: #ffffff; /* Optional: make the text color white on hover */
 }
