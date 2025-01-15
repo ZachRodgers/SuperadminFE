@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import Modal from '../components/Modal';
 import './DeviceManager.css';
+import './RefreshBar.css';
 
 const API_URL = 'http://localhost:5000/devices';
+const minHeartbeat = 60 * 1000; // 60 seconds (in milliseconds)
+const refreshInterval = 10000; // 10 seconds (in milliseconds)
 
 interface ParsedDevice {
   id: string;
@@ -19,10 +22,26 @@ const DeviceManager: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<'add' | 'remove' | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     fetchDevices();
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setProgress((prev) =>
+        prev >= 100 ? 0 : prev + (100 / (refreshInterval / 100))
+      );
+
+      if (progress >= 100) {
+        fetchDevices();
+        setProgress(0);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [progress]);
 
   const fetchDevices = async () => {
     try {
@@ -37,66 +56,62 @@ const DeviceManager: React.FC = () => {
     }
   };
 
-  const getNextLotId = (): string => {
-    const letters = 'abcdefghijklmnopqrstuvwxyz';
-    for (let i = 0; i < letters.length; i++) {
-      const nextId = `${lotId}${letters[i]}`;
-      if (!devices.some((device) => device.startsWith(nextId))) {
-        return nextId;
-      }
-    }
-    return `${lotId}z`; // Default to 'z' if no available ID
+  const handleManualRefresh = () => {
+    fetchDevices();
+    setProgress(0);
   };
 
-  const getRelativeTime = (timestamp: string | null, isOnline: boolean): string => {
+  const getRelativeTime = (timestamp: string | null): string => {
     if (!timestamp || timestamp === 'na') return 'Recently Added';
-  
+
     const parsedDate = new Date(timestamp);
     if (isNaN(parsedDate.getTime())) return 'Invalid date';
-  
+
     const now = new Date();
     const diffMs = now.getTime() - parsedDate.getTime();
     const diffSeconds = Math.round(diffMs / 1000);
     const diffMinutes = Math.round(diffSeconds / 60);
     const diffHours = Math.round(diffMinutes / 60);
     const diffDays = Math.round(diffHours / 24);
-  
+
     if (diffSeconds < 60) {
       const roundedSeconds = Math.round(diffSeconds / 10) * 10;
-      return `${isOnline ? 'Last updated' : 'Last seen'} ${roundedSeconds} seconds ago`;
+      return `${roundedSeconds} seconds ago`;
     } else if (diffMinutes < 60) {
-      return `${isOnline ? 'Last updated' : 'Last seen'} ${diffMinutes} mins ago`;
+      return `${diffMinutes} mins ago`;
     } else if (diffHours < 24) {
-      return `${isOnline ? 'Last updated' : 'Last seen'} ${diffHours} hours ago`;
+      return `${diffHours} hours ago`;
     } else if (diffDays <= 7) {
-      return `${isOnline ? 'Last updated' : 'Last seen'} ${diffDays} days ago`;
+      return `${diffDays} days ago`;
     } else {
-      const options: Intl.DateTimeFormatOptions = {
+      return parsedDate.toLocaleString('en-US', {
         month: 'long',
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
-      };
-      return `${isOnline ? 'Last updated' : 'Last seen'} ${parsedDate.toLocaleString('en-US', options)}`;
+      });
     }
   };
-  
 
   const parseDevice = (deviceString: string): ParsedDevice => {
     const [id, temp, timestamp, network] = deviceString.split('_');
-    const isOnline = temp !== 'na';
+
+    const now = new Date();
+    const deviceTime = new Date(timestamp);
+    const isOnline = timestamp !== 'na' && now.getTime() - deviceTime.getTime() <= minHeartbeat;
+
     return {
       id,
-      status: isOnline ? `Online ${temp.replace('C', '°C')}` : 'Offline',
-      updated: getRelativeTime(timestamp, isOnline),
+      status: isOnline ? `Online` : 'Offline',
+      updated: getRelativeTime(timestamp),
       network: network !== 'na' ? network : 'N/A',
       online: isOnline,
     };
-  };  
+  };
 
   const handleAddDevice = async () => {
-    const newDeviceId = getNextLotId();
+    const newDeviceId = `${lotId}${devices.length + 1}`;
     const newDeviceString = `${newDeviceId}_na_na_na`;
     try {
       const response = await fetch(API_URL, {
@@ -153,6 +168,17 @@ const DeviceManager: React.FC = () => {
 
   return (
     <div className="device-manager">
+      <div className="refresh-bar-wrapper">
+        <div className="refresh-bar">
+          <div
+            className="refresh-bar-fill"
+            style={{ width: `${progress}%` }}
+          ></div>
+        </div>
+        <div className="refresh-text" onClick={handleManualRefresh}>
+          Refreshing...
+        </div>
+      </div>
       <h1>Device Manager</h1>
       <div className="device-list">
         {devices.map((device, index) => {
@@ -203,7 +229,7 @@ const DeviceManager: React.FC = () => {
           }}
         >
           <div className="device-info">
-            <h2>{getNextLotId()}</h2>
+            <h2>New Device</h2>
             <p className="status">+ Add New Device</p>
           </div>
           <div className="add-device">
