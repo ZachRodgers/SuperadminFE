@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import lotsData from '../data/Lots.json'; // Import JSON file
 
 const DEVICES_API_URL = 'http://localhost:5000/devices'; // Replace with actual devices.json API endpoint
+const minHeartbeat = 60 * 1000; // 60 seconds (in milliseconds)
 
 interface Lot {
   lotID: string;
@@ -64,9 +65,18 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const calculateDeviceStatus = (lotID: string): DeviceStatus => {
+    const now = new Date();
     const relevantDevices = devices.filter((device) => device.startsWith(lotID));
-    const onlineCount = relevantDevices.filter((device) => !device.split('_')[1].includes('na')).length;
+
+    const onlineCount = relevantDevices.filter((device) => {
+      const [, , timestamp] = device.split('_');
+      if (timestamp === 'na') return false;
+      const deviceTime = new Date(timestamp);
+      return now.getTime() - deviceTime.getTime() <= minHeartbeat;
+    }).length;
+
     const offlineCount = relevantDevices.length - onlineCount;
+
     return { online: onlineCount, offline: offlineCount, total: relevantDevices.length };
   };
 
