@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import "./Customer.css";
 import lotsData from "../data/Lots.json";
+import Modal from "../components/Modal";
 
 interface Lot {
   purchaserName: string;
@@ -19,13 +20,100 @@ interface Lot {
 
 const Customer: React.FC = () => {
   const { lotId } = useParams<{ lotId: string }>();
+  const navigate = useNavigate();
   const [lot, setLot] = useState<Lot | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [editableFields, setEditableFields] = useState<Partial<Lot>>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
 
   useEffect(() => {
     const foundLot = lotsData.find((item: any) => item.lotID === lotId);
-    if (foundLot) setLot(foundLot);
+    if (foundLot) {
+      setLot(foundLot);
+      setEditableFields({
+        purchaserName: foundLot.purchaserName,
+        companyName: foundLot.companyName,
+        lotName: foundLot.lotName,
+        address: foundLot.address,
+        location: foundLot.location,
+        adminPassword: foundLot.adminPassword,
+      });
+    }
   }, [lotId]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (unsavedChanges) {
+        e.preventDefault();
+        e.returnValue = ""; // Show browser's default confirmation dialog
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [unsavedChanges]);
+
+  const handleFieldChange = (field: keyof Lot, value: string) => {
+    setEditableFields((prevFields) => ({
+      ...prevFields,
+      [field]: value,
+    }));
+    setUnsavedChanges(true);
+  };
+
+  const toggleEditMode = () => {
+    if (editMode && unsavedChanges) {
+      setShowModal(true);
+    } else {
+      setEditMode(!editMode);
+    }
+  };
+
+  const handleSaveChanges = () => {
+    setLot((prevLot) => ({
+      ...prevLot!,
+      ...editableFields,
+    }));
+    setUnsavedChanges(false);
+    setEditMode(false);
+    setShowModal(false);
+
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+    }
+    setPendingNavigation(null);
+  };
+
+  const handleCancelChanges = () => {
+    setEditableFields({
+      purchaserName: lot?.purchaserName,
+      companyName: lot?.companyName,
+      lotName: lot?.lotName,
+      address: lot?.address,
+      location: lot?.location,
+      adminPassword: lot?.adminPassword,
+    });
+    setUnsavedChanges(false);
+    setEditMode(false);
+    setShowModal(false);
+
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+    }
+    setPendingNavigation(null);
+  };
+
+  const handleNavigation = (path: string) => {
+    if (editMode && unsavedChanges) {
+      setShowModal(true);
+      setPendingNavigation(path);
+    } else {
+      navigate(path);
+    }
+  };
 
   if (!lot) {
     return (
@@ -40,7 +128,6 @@ const Customer: React.FC = () => {
     <div className="customer-page">
       <h1>Customer</h1>
       <div className="customer-details">
-        {/* Left Column */}
         <div className="customer-column">
           <p>Purchaser Name:</p>
           <p>Company Name:</p>
@@ -48,9 +135,6 @@ const Customer: React.FC = () => {
           <p>LotID:</p>
           <p>Address:</p>
           <p>Location:</p>
-          <p></p>
-          <p></p>
-          <p></p>
           <p>Purchase Date:</p>
           <p>Account Created:</p>
           <p>Last Activity:</p>
@@ -58,37 +142,95 @@ const Customer: React.FC = () => {
           <p>Admin Password:</p>
         </div>
 
-        {/* Right Column */}
         <div className="customer-column">
-          <p>{lot.purchaserName}</p>
-          <p>{lot.companyName}</p>
-          <p>{lot.lotName}</p>
-          <p>{lot.lotID}</p>
-          <p>{lot.address}</p>
-          <p>{lot.location}</p>
-          <p></p>
-          <p></p>
-          <p></p>
-          <p>{lot.purchaseDate}</p>
-          <p>{lot.accountCreated}</p>
-          <p>{lot.lastActivity}</p>
-          <p>{lot.passwordChange}</p>
           <p
-            className="admin-password"
-            onMouseEnter={() => setShowPassword(true)}
-            onMouseLeave={() => setShowPassword(false)}
+            contentEditable={editMode}
+            suppressContentEditableWarning={true}
+            className={editMode ? "editable-highlight" : ""}
+            onBlur={(e) =>
+              handleFieldChange(
+                "purchaserName",
+                e.currentTarget.textContent || ""
+              )
+            }
           >
-            {showPassword ? lot.adminPassword : "********"}
+            {editableFields.purchaserName || lot.purchaserName}
+          </p>
+          <p
+            contentEditable={editMode}
+            suppressContentEditableWarning={true}
+            className={editMode ? "editable-highlight" : ""}
+            onBlur={(e) =>
+              handleFieldChange(
+                "companyName",
+                e.currentTarget.textContent || ""
+              )
+            }
+          >
+            {editableFields.companyName || lot.companyName}
+          </p>
+          <p
+            contentEditable={editMode}
+            suppressContentEditableWarning={true}
+            className={editMode ? "editable-highlight" : ""}
+            onBlur={(e) =>
+              handleFieldChange("lotName", e.currentTarget.textContent || "")
+            }
+          >
+            {editableFields.lotName || lot.lotName}
+          </p>
+          <p className={editMode ? "disabled-text" : ""}>{lot.lotID}</p>
+          <p
+            contentEditable={editMode}
+            suppressContentEditableWarning={true}
+            className={editMode ? "editable-highlight" : ""}
+            onBlur={(e) =>
+              handleFieldChange("address", e.currentTarget.textContent || "")
+            }
+          >
+            {editableFields.address || lot.address}
+          </p>
+          <p
+            contentEditable={editMode}
+            suppressContentEditableWarning={true}
+            className={editMode ? "editable-highlight" : ""}
+            onBlur={(e) =>
+              handleFieldChange("location", e.currentTarget.textContent || "")
+            }
+          >
+            {editableFields.location || lot.location}
+          </p>
+          <p className={editMode ? "disabled-text" : ""}>{lot.purchaseDate}</p>
+          <p className={editMode ? "disabled-text" : ""}>
+            {lot.accountCreated}
+          </p>
+          <p className={editMode ? "disabled-text" : ""}>{lot.lastActivity}</p>
+          <p className={editMode ? "disabled-text" : ""}>{lot.passwordChange}</p>
+          <p
+            contentEditable={editMode}
+            suppressContentEditableWarning={true}
+            className={editMode ? "editable-highlight" : ""}
+            onBlur={(e) =>
+              handleFieldChange(
+                "adminPassword",
+                e.currentTarget.textContent || ""
+              )
+            }
+          >
+            {editableFields.adminPassword || lot.adminPassword}
           </p>
         </div>
       </div>
 
       <h2>Account</h2>
       <div className="account-actions">
-        <button className="action-button">
+        <button
+          className={`action-button ${editMode ? "edit-active" : ""}`}
+          onClick={toggleEditMode}
+        >
           <img
             className="button-icon"
-            src="/assets/Edit.svg"
+            src={editMode ? "/assets/EditInverted.svg" : "/assets/Edit.svg"}
             alt="Edit Icon"
           />
           <img
@@ -98,7 +240,14 @@ const Customer: React.FC = () => {
           />
           <span>Edit</span>
         </button>
-        <button className="action-button">
+        <button
+          className="action-button"
+          disabled={editMode}
+          style={{
+            pointerEvents: editMode ? "none" : "auto",
+            opacity: editMode ? 0.5 : 1,
+          }}
+        >
           <img
             className="button-icon"
             src="/assets/Pause.svg"
@@ -111,7 +260,14 @@ const Customer: React.FC = () => {
           />
           <span>Pause</span>
         </button>
-        <button className="action-button">
+        <button
+          className="action-button"
+          disabled={editMode}
+          style={{
+            pointerEvents: editMode ? "none" : "auto",
+            opacity: editMode ? 0.5 : 1,
+          }}
+        >
           <img
             className="button-icon"
             src="/assets/Suspend.svg"
@@ -132,6 +288,17 @@ const Customer: React.FC = () => {
           <p>Account created on: {lot.accountCreated}</p>
         </div>
       </div>
+
+      {showModal && (
+        <Modal
+          title="Please confirm changes"
+          message="You have made modifications to this customer's profile. Would you like to save changes?"
+          onConfirm={handleSaveChanges}
+          onCancel={handleCancelChanges}
+          confirmText="Save Changes"
+          cancelText="Cancel Changes"
+        />
+      )}
     </div>
   );
 };

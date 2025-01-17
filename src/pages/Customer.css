@@ -34,8 +34,18 @@
   .admin-password:hover {
   }
   
-  .account-actions {
+  .disabled-text {
+    color: #ffffff;
+    opacity: 0.3;
+  }
+  
+  .editable-highlight {
+    background-color: #363941; /* Highlight color */
+    border-radius: 3px; /* Optional: adds slight rounding to the highlight */
+  }
+  
 
+  .account-actions {
     display: flex;
     width: 10%;
     justify-content: left;
@@ -52,15 +62,9 @@
     cursor: pointer;
     position: relative;
   }
-
+  
   .action-button:hover {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     background: #272A30;
-    border: none;
-    cursor: pointer;
-    position: relative;
   }
   
   .button-icon {
@@ -77,12 +81,30 @@
     transition: opacity 0.2s ease-in-out;
   }
   
+  /* Regular hover effects */
   .action-button:hover .button-icon {
-    opacity: 0;
+    opacity: 0; /* Fades out default icon */
   }
   
   .action-button:hover .button-icon-hover {
-    opacity: 1;
+    opacity: 1; /* Fades in inverted icon */
+  }
+  
+  /* When edit mode is active */
+  .action-button.edit-active .button-icon {
+    opacity: 0; /* Hides default icon */
+  }
+  
+  .action-button.edit-active .button-icon-hover {
+    opacity: 1; /* Keeps inverted icon visible */
+  }
+  
+  .action-button.edit-active:hover .button-icon {
+    opacity: 0; /* Prevents fading when hovering in edit mode */
+  }
+  
+  .action-button.edit-active:hover .button-icon-hover {
+    opacity: 1; /* Keeps inverted icon stable */
   }
   
   .action-button span {
@@ -104,15 +126,13 @@
     overflow-y: auto;
   }
   
-
-h1, h2 {
+  h1, h2 {
     font-size: 32px; 
     font-weight: bold;
     color: #ffffff;
     margin-bottom: 20px; 
   }
   
-
   .customer-page h1 {
     font-size: 32px;
     text-align: left;
