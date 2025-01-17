@@ -3,7 +3,7 @@
     "lotID": "0000-0001",
     "companyName": "Parallel Parking Solutions Inc.",
     "location": "Ottawa, Ontario, Canada",
-    "address": "770 Brookfield Road, Ottawa, ON",
+    "address": "123 Example Street",
     "purchaserName": "Zach Rodgers",
     "lotName": "Parallel Development Lot",
     "purchaseDate": "01/01/2024",
@@ -11,13 +11,14 @@
     "lastActivity": "01/01/2025",
     "passwordChange": "01/01/2025",
     "adminPassword": "admin",
-    "adminPortal": "https://google.ca"
+    "adminPortal": "https://google.ca",
+    "accountStatus": "active"
   },
   {
     "lotID": "0000-0002",
     "companyName": "Company Name",
     "location": "City, Province/State, Country",
-    "address": "0 Street Name, City, Province/State",
+    "address": "456 Another Place",
     "purchaserName": "Firstname Lastname",
     "lotName": "My Parking Lot",
     "purchaseDate": "01/01/2024",
@@ -25,13 +26,14 @@
     "lastActivity": "01/01/2025",
     "passwordChange": "01/01/2025",
     "adminPassword": "Password",
-    "adminPortal": "https://google.ca"
+    "adminPortal": "https://google.ca",
+    "accountStatus": "active"
   },
   {
     "lotID": "0000-0003",
     "companyName": "TestCompany1",
     "location": "Northern America, Earth, Milky Way, Universe",
-    "address": "69 Dino Street",
+    "address": "789 Galactic HQ",
     "purchaserName": "Rex Johnford",
     "lotName": "Galactic Headquarters",
     "purchaseDate": "01/03/2024",
@@ -39,13 +41,14 @@
     "lastActivity": "01/01/2025",
     "passwordChange": "01/01/2025",
     "adminPassword": "placeholderpassword1",
-    "adminPortal": "https://google.ca"
+    "adminPortal": "https://google.ca",
+    "accountStatus": "active"
   },
   {
     "lotID": "0000-4Z26",
     "companyName": "The Revalie",
     "location": "Ottawa, Ontario, Canada",
-    "address": "770 Brookfield Road",
+    "address": "321 Quiet Corner",
     "purchaserName": "Steve",
     "lotName": "Revalie Parking Lot",
     "purchaseDate": "01/01/2025",
@@ -53,6 +56,7 @@
     "lastActivity": "01/01/2025",
     "passwordChange": "01/01/2025",
     "adminPassword": "placeholderpassword2",
-    "adminPortal": "https://google.ca"
+    "adminPortal": "https://google.ca",
+    "accountStatus": "active"
   }
 ]

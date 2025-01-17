@@ -3,7 +3,7 @@ import './Dashboard.css';
 import { useNavigate } from 'react-router-dom';
 import lotsData from '../data/Lots.json';
 
-const DEVICES_API_URL = 'http://localhost:5000/devices'; // Replace with actual devices.json API endpoint
+const DEVICES_API_URL = 'http://localhost:5000/devices';
 
 interface Lot {
   lotID: string;
@@ -11,6 +11,7 @@ interface Lot {
   location: string;
   purchaseDate: string;
   adminPortal: string;
+  accountStatus: string; // Include accountStatus field
 }
 
 interface DeviceStatus {
@@ -39,6 +40,7 @@ const Dashboard: React.FC = () => {
       location: item.location,
       purchaseDate: item.purchaseDate,
       adminPortal: item.adminPortal,
+      accountStatus: item.accountStatus, // Include accountStatus
     }));
 
     setLots(parsedLots);
@@ -98,6 +100,7 @@ const Dashboard: React.FC = () => {
   };
 
   const filteredLots = lots
+    .filter((lot) => lot.accountStatus !== 'suspended') // Exclude suspended lots
     .filter((lot) => {
       const normalizedData = normalizeString(
         `${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate}`
@@ -182,7 +185,7 @@ const Dashboard: React.FC = () => {
           <tbody>
             {filteredLots.map((lot, index) => {
               const { online, offline, total } = calculateDeviceStatus(lot.lotID);
-              const visibleDevices = 8; // Number of devices to display
+              const visibleDevices = 8;
               const additionalDevices = total - visibleDevices;
 
               return (
