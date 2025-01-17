@@ -7,7 +7,7 @@ const DEVICES_API_URL = 'http://localhost:5000/devices'; // Replace with actual 
 
 interface Lot {
   lotID: string;
-  customer: string;
+  companyName: string;
   location: string;
   purchaseDate: string;
   adminPortal: string;
@@ -33,16 +33,13 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const parsedLots: Lot[] = lotsData.map((item: { data: string }) => {
-      const [lotID, customer, location, purchaseDate, , adminPortal] = item.data.split('_');
-      return {
-        lotID,
-        customer: customer.replace(/-/g, ' '),
-        location: location.replace(/-/g, ' '),
-        purchaseDate,
-        adminPortal,
-      };
-    });
+    const parsedLots: Lot[] = lotsData.map((item: any) => ({
+      lotID: item.lotID,
+      companyName: item.companyName,
+      location: item.location,
+      purchaseDate: item.purchaseDate,
+      adminPortal: item.adminPortal,
+    }));
 
     setLots(parsedLots);
   }, []);
@@ -103,7 +100,7 @@ const Dashboard: React.FC = () => {
   const filteredLots = lots
     .filter((lot) => {
       const normalizedData = normalizeString(
-        `${lot.lotID} ${lot.customer} ${lot.location} ${lot.purchaseDate}`
+        `${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate}`
       );
       const normalizedSearch = normalizeString(searchQuery);
       return normalizedData.includes(normalizedSearch);
@@ -148,7 +145,7 @@ const Dashboard: React.FC = () => {
           <img src="/assets/SearchBarIcon.svg" alt="Search" />
           <input
             type="text"
-            placeholder="Search LotID, Customer, Date or Location"
+            placeholder="Search LotID, Company Name, Date or Location"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -156,7 +153,7 @@ const Dashboard: React.FC = () => {
         <table className="dashboard-table">
           <thead>
             <tr>
-              {['lotID', 'customer', 'location', 'purchaseDate'].map((key) => (
+              {['lotID', 'companyName', 'location', 'purchaseDate'].map((key) => (
                 <th
                   key={key}
                   onClick={() => handleSort(key as keyof Lot)}
@@ -191,7 +188,7 @@ const Dashboard: React.FC = () => {
               return (
                 <tr key={index} onClick={() => handleOpenLot(lot.lotID)}>
                   <td>{lot.lotID}</td>
-                  <td>{lot.customer}</td>
+                  <td>{lot.companyName}</td>
                   <td>{lot.location}</td>
                   <td>{lot.purchaseDate}</td>
                   <td>
@@ -200,9 +197,7 @@ const Dashboard: React.FC = () => {
                       .map((_, idx) => (
                         <span
                           key={`device-${idx}`}
-                          className={`dot ${
-                            idx < online ? 'green' : 'red'
-                          }`}
+                          className={`dot ${idx < online ? 'green' : 'red'}`}
                         ></span>
                       ))}
                     {additionalDevices > 0 && (
