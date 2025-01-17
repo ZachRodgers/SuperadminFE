@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
 import { useNavigate } from 'react-router-dom';
-import lotsData from '../data/Lots.json'; // Import JSON file
+import lotsData from '../data/Lots.json';
 
 const DEVICES_API_URL = 'http://localhost:5000/devices'; // Replace with actual devices.json API endpoint
-const minHeartbeat = 60 * 1000; // 60 seconds (in milliseconds)
 
 interface Lot {
   lotID: string;
@@ -27,14 +26,13 @@ interface SortConfig {
 
 const Dashboard: React.FC = () => {
   const [lots, setLots] = useState<Lot[]>([]);
-  const [devices, setDevices] = useState<string[]>([]); // Store devices.json data
+  const [devices, setDevices] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lotID', direction: 'ascending' });
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Parse Lots.json
     const parsedLots: Lot[] = lotsData.map((item: { data: string }) => {
       const [lotID, customer, location, purchaseDate, , adminPortal] = item.data.split('_');
       return {
@@ -50,7 +48,6 @@ const Dashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Fetch Devices.json
     const fetchDevices = async () => {
       try {
         const response = await fetch(DEVICES_API_URL);
@@ -65,17 +62,27 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const calculateDeviceStatus = (lotID: string): DeviceStatus => {
-    const now = new Date();
-    const relevantDevices = devices.filter((device) => device.startsWith(lotID));
+    const relevantDevices = devices.filter((device) => device.startsWith(`deviceID:${lotID}`));
 
     const onlineCount = relevantDevices.filter((device) => {
-      const [, , timestamp] = device.split('_');
-      if (timestamp === 'na') return false;
-      const deviceTime = new Date(timestamp);
-      return now.getTime() - deviceTime.getTime() <= minHeartbeat;
+      const fields = Object.fromEntries(
+        device.split(';').map((field) => {
+          const [key, value] = field.split(':');
+          return [key, value?.trim()];
+        })
+      );
+      return fields.status === 'Online';
     }).length;
 
-    const offlineCount = relevantDevices.length - onlineCount;
+    const offlineCount = relevantDevices.filter((device) => {
+      const fields = Object.fromEntries(
+        device.split(';').map((field) => {
+          const [key, value] = field.split(':');
+          return [key, value?.trim()];
+        })
+      );
+      return fields.status === 'Offline' || fields.status === 'RecentlyAdded';
+    }).length;
 
     return { online: onlineCount, offline: offlineCount, total: relevantDevices.length };
   };
@@ -193,7 +200,9 @@ const Dashboard: React.FC = () => {
                       .map((_, idx) => (
                         <span
                           key={`device-${idx}`}
-                          className={`dot ${idx < online ? 'green' : 'red'}`}
+                          className={`dot ${
+                            idx < online ? 'green' : 'red'
+                          }`}
                         ></span>
                       ))}
                     {additionalDevices > 0 && (

@@ -11,6 +11,7 @@ const refreshInterval = 10000; // 10 seconds (in milliseconds)
 interface ParsedDevice {
   id: string;
   status: string;
+  temp: string;
   updated: string;
   network: string;
   online: boolean;
@@ -48,9 +49,17 @@ const DeviceManager: React.FC = () => {
     try {
       const response = await fetch(API_URL);
       const data = await response.json();
-      const filteredDevices = data.devices.filter((device: string) =>
-        device.startsWith(lotId || '')
-      );
+
+      const filteredDevices = data.devices.filter((deviceString: string) => {
+        const fields = Object.fromEntries(
+          deviceString.split(';').map((field) => {
+            const [key, value] = field.split(':');
+            return [key, value?.trim()];
+          })
+        );
+        return fields.deviceID?.startsWith(lotId || '');
+      });
+
       setDevices(filteredDevices);
       calculateNextDeviceId(filteredDevices);
     } catch (error) {
@@ -59,7 +68,9 @@ const DeviceManager: React.FC = () => {
   };
 
   const calculateNextDeviceId = (currentDevices: string[]) => {
-    const existingIds = currentDevices.map((device) => device.split('_')[0]);
+    const existingIds = currentDevices.map((device) =>
+      device.split(';')[0].split(':')[1]
+    );
     const baseId = lotId || '';
     for (let i = 0; i < 26; i++) {
       const potentialId = `${baseId}${String.fromCharCode(97 + i)}`;
@@ -81,9 +92,13 @@ const DeviceManager: React.FC = () => {
       console.error('No next device ID available.');
       return;
     }
-
-    const newDeviceString = `${nextDeviceId}_na_na_na`;
-
+  
+    // Generate the current timestamp in ISO-like format
+    const currentTimestamp = new Date().toISOString(); // Example: 2025-01-17T18:45:00.000Z
+  
+    // Create the new device string with the correct timestamp format
+    const newDeviceString = `deviceID:${nextDeviceId};status:RecentlyAdded;temp:na;timestamp:${currentTimestamp};networkName:na;networkPass:na;networkSpeed:na;plateNumber:na;confidence:na;eventType:na;vehicleType:na;vehicleColor:na`;
+  
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -97,18 +112,19 @@ const DeviceManager: React.FC = () => {
       console.error('Error adding device:', error);
     }
   };
+  
 
   const handleRemoveDevice = async (deviceId: string) => {
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(`${API_URL}/${deviceId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId }),
       });
+
       if (response.ok) {
         fetchDevices();
+      } else {
+        console.error('Failed to remove device:', await response.text());
       }
-      setIsModalOpen(false);
     } catch (error) {
       console.error('Error removing device:', error);
     }
@@ -131,6 +147,7 @@ const DeviceManager: React.FC = () => {
     } else if (modalAction === 'remove' && selectedDevice) {
       handleRemoveDevice(selectedDevice);
     }
+    setIsModalOpen(false);
   };
 
   const handleCancelModal = () => {
@@ -138,26 +155,51 @@ const DeviceManager: React.FC = () => {
   };
 
   const parseDevice = (deviceString: string): ParsedDevice => {
-    const [id, temp, timestamp, network] = deviceString.split('_');
-
-    const now = new Date();
-    const deviceTime = new Date(timestamp);
-    const isOnline = timestamp !== 'na' && now.getTime() - deviceTime.getTime() <= minHeartbeat;
-
+    const fields = Object.fromEntries(
+      deviceString.split(';').map((field) => {
+        const splitIndex = field.indexOf(':'); // Find the first colon
+        const key = field.substring(0, splitIndex);
+        const value = field.substring(splitIndex + 1); // Get everything after the first colon
+        return [key, value?.trim()]; // Ensure whitespace is removed
+      })
+    );
+  
+    // Extract and validate the timestamp
+    const timestamp = fields.timestamp && fields.timestamp !== 'na' ? fields.timestamp : null;
+    const deviceTime = timestamp ? new Date(timestamp) : null;
+  
+    // Determine online status based on 'status'
+    const isOnline = fields.status === 'Online';
+  
+    // Calculate relative time with rounding logic
+    const updated =
+      fields.status === 'RecentlyAdded'
+        ? deviceTime && !isNaN(deviceTime.getTime())
+          ? `Recently Added ${getRelativeTime(timestamp)}`
+          : 'Recently Added'
+        : deviceTime && !isNaN(deviceTime.getTime())
+        ? getRelativeTime(timestamp)
+        : 'Recently Added';
+  
     return {
-      id,
-      status: isOnline ? `Online` : 'Offline',
-      updated: getRelativeTime(timestamp),
-      network: network !== 'na' ? network : 'N/A',
-      online: isOnline,
+      id: fields.deviceID || 'Unknown',
+      status: fields.status === 'RecentlyAdded' ? 'Offline' : fields.status || 'Offline',
+      temp: fields.temp || 'na',
+      updated, // Use the rounded time logic for 'updated'
+      network: fields.networkName || 'N/A',
+      online: isOnline, // Online status based solely on the 'status' field
     };
   };
+  
 
   const getRelativeTime = (timestamp: string | null): string => {
     if (!timestamp || timestamp === 'na') return 'Recently Added';
 
     const parsedDate = new Date(timestamp);
-    if (isNaN(parsedDate.getTime())) return 'Invalid date';
+    if (isNaN(parsedDate.getTime())) {
+      console.warn('Invalid timestamp:', timestamp);
+      return 'Invalid date';
+    }
 
     const now = new Date();
     const diffMs = now.getTime() - parsedDate.getTime();
@@ -166,23 +208,17 @@ const DeviceManager: React.FC = () => {
     const diffHours = Math.round(diffMinutes / 60);
     const diffDays = Math.round(diffHours / 24);
 
-    if (diffSeconds < 60) {
-      return `${Math.round(diffSeconds / 10) * 10} seconds ago`;
-    } else if (diffMinutes < 60) {
-      return `${diffMinutes} mins ago`;
-    } else if (diffHours < 24) {
-      return `${diffHours} hours ago`;
-    } else if (diffDays <= 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return parsedDate.toLocaleString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      });
-    }
+    if (diffSeconds < 60) return `${diffSeconds} seconds ago`;
+    if (diffMinutes < 60) return `${diffMinutes} mins ago`;
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays <= 7) return `${diffDays} days ago`;
+    return parsedDate.toLocaleString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
   };
 
   return (
@@ -200,8 +236,8 @@ const DeviceManager: React.FC = () => {
       </div>
       <h1>Device Manager</h1>
       <div className="device-list">
-        {devices.map((device, index) => {
-          const parsedDevice = parseDevice(device);
+        {devices.map((deviceString, index) => {
+          const parsedDevice = parseDevice(deviceString);
           return (
             <div
               key={parsedDevice.id}

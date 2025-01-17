@@ -44,24 +44,31 @@ app.post('/devices', (req, res) => {
 });
 
 // Remove Device
-app.delete('/devices', (req, res) => {
-  const { deviceId } = req.body;
+app.delete('/devices/:deviceID', (req, res) => {
+  const { deviceID } = req.params;
   fs.readFile(devicesFilePath, 'utf8', (err, data) => {
     if (err) {
       res.status(500).send('Error reading devices file');
-    } else {
-      const devicesData = JSON.parse(data);
-      devicesData.devices = devicesData.devices.filter((device) => !device.startsWith(deviceId));
-      fs.writeFile(devicesFilePath, JSON.stringify(devicesData, null, 2), (writeErr) => {
-        if (writeErr) {
-          res.status(500).send('Error writing to devices file');
-        } else {
-          res.status(200).send('Device removed successfully');
-        }
-      });
+      return;
     }
+
+    const devicesData = JSON.parse(data);
+
+    devicesData.devices = devicesData.devices.filter((device) => {
+      const parsedId = device.match(/deviceID:([^;]+)/)?.[1];
+      return parsedId !== deviceID;
+    });
+
+    fs.writeFile(devicesFilePath, JSON.stringify(devicesData, null, 2), (writeErr) => {
+      if (writeErr) {
+        res.status(500).send('Error writing to devices file');
+      } else {
+        res.status(200).send(`Device with ID ${deviceID} removed successfully.`);
+      }
+    });
   });
 });
+
 
 // Start Server
 app.listen(PORT, () => {
