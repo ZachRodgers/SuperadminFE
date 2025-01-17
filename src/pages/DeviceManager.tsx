@@ -171,6 +171,14 @@ const DeviceManager: React.FC = () => {
     // Determine online status based on 'status'
     const isOnline = fields.status === 'Online';
   
+    // Determine the displayed status
+    const status =
+      fields.status === 'RecentlyAdded'
+        ? 'Offline' // Display "Offline" for "Recently Added" devices
+        : isOnline && fields.temp && fields.temp !== 'na'
+        ? `${fields.status} ${fields.temp}°C` // Include temp if online and valid
+        : fields.status || 'Offline';
+  
     // Calculate relative time with rounding logic
     const updated =
       fields.status === 'RecentlyAdded'
@@ -183,13 +191,15 @@ const DeviceManager: React.FC = () => {
   
     return {
       id: fields.deviceID || 'Unknown',
-      status: fields.status === 'RecentlyAdded' ? 'Offline' : fields.status || 'Offline',
+      status, // Display "Offline" for Recently Added devices
       temp: fields.temp || 'na',
-      updated, // Use the rounded time logic for 'updated'
+      updated, // Keep the timestamp logic
       network: fields.networkName || 'N/A',
-      online: isOnline, // Online status based solely on the 'status' field
+      online: isOnline, // Online status determined by "status" field
     };
   };
+  
+  
   
 
   const getRelativeTime = (timestamp: string | null): string => {
