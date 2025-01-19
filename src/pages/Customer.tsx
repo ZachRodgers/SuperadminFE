@@ -24,13 +24,12 @@ const Customer: React.FC = () => {
   const [lot, setLot] = useState<Lot | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [editableFields, setEditableFields] = useState<Partial<Lot>>({});
-  const [showPassword, setShowPassword] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
 
   useEffect(() => {
-    const foundLot = lotsData.find((item: any) => item.lotID === lotId);
+    const foundLot = lotsData.find((item) => item.lotID === lotId);
     if (foundLot) {
       setLot(foundLot);
       setEditableFields({
@@ -43,18 +42,6 @@ const Customer: React.FC = () => {
       });
     }
   }, [lotId]);
-
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (unsavedChanges) {
-        e.preventDefault();
-        e.returnValue = ""; // Show browser's default confirmation dialog
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [unsavedChanges]);
 
   const handleFieldChange = (field: keyof Lot, value: string) => {
     setEditableFields((prevFields) => ({
@@ -72,13 +59,47 @@ const Customer: React.FC = () => {
     }
   };
 
+  const saveChangesToServer = async (updatedLots: Lot[]) => {
+    try {
+      const response = await fetch("http://localhost:5000/update-lots", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedLots),
+      });
+
+      if (response.ok) {
+        console.log("Lots.json updated successfully.");
+      } else {
+        console.error("Failed to update Lots.json.");
+      }
+    } catch (error) {
+      console.error("Error updating Lots.json:", error);
+    }
+  };
+
+  const saveChangesToJSON = () => {
+    if (lot) {
+      const updatedLots = lotsData.map((item) =>
+        item.lotID === lotId
+          ? { ...item, ...editableFields }
+          : item
+      );
+
+      saveChangesToServer(updatedLots);
+
+      setLot((prevLot) => ({
+        ...prevLot!,
+        ...editableFields,
+      }));
+      setUnsavedChanges(false);
+      setEditMode(false);
+    }
+  };
+
   const handleSaveChanges = () => {
-    setLot((prevLot) => ({
-      ...prevLot!,
-      ...editableFields,
-    }));
-    setUnsavedChanges(false);
-    setEditMode(false);
+    saveChangesToJSON();
     setShowModal(false);
 
     if (pendingNavigation) {

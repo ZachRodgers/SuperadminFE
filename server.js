@@ -9,8 +9,11 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 
-// Path to Devices.json
+// Paths to JSON files
 const devicesFilePath = './public/Devices.json';
+const lotsFilePath = './src/data/Lots.json';
+
+// ** Devices.json Endpoints ** //
 
 // Read Devices
 app.get('/devices', (req, res) => {
@@ -69,6 +72,27 @@ app.delete('/devices/:deviceID', (req, res) => {
   });
 });
 
+// ** Lots.json Endpoints ** //
+
+// Update Lots
+app.put('/update-lots', (req, res) => {
+  const updatedLots = req.body;
+
+  if (!Array.isArray(updatedLots)) {
+    res.status(400).send('Invalid data format. Expected an array.');
+    return;
+  }
+
+  fs.writeFile(lotsFilePath, JSON.stringify(updatedLots, null, 2), (err) => {
+    if (err) {
+      console.error('Error updating Lots.json:', err);
+      res.status(500).send('Failed to update Lots.json.');
+    } else {
+      console.log('Lots.json successfully updated.');
+      res.status(200).send('Lots.json updated successfully.');
+    }
+  });
+});
 
 // Start Server
 app.listen(PORT, () => {
