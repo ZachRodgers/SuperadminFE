@@ -16,6 +16,7 @@ interface Lot {
   lastActivity: string;
   passwordChange: string;
   adminPassword: string;
+  accountStatus: string;
 }
 
 const Customer: React.FC = () => {
@@ -95,6 +96,36 @@ const Customer: React.FC = () => {
       }));
       setUnsavedChanges(false);
       setEditMode(false);
+    }
+  };
+
+  const toggleAccountStatus = async (newStatus: "paused" | "active" | "suspended") => {
+    if (!lot) return;
+
+    const updatedStatus =
+      lot.accountStatus === newStatus ? "active" : newStatus; // Toggle status back to active if already in the state
+
+    const updatedLots = lotsData.map((item) =>
+      item.lotID === lot.lotID ? { ...item, accountStatus: updatedStatus } : item
+    );
+
+    try {
+      const response = await fetch("http://localhost:5000/update-lots", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedLots),
+      });
+
+      if (response.ok) {
+        console.log(`Account status updated to: ${updatedStatus}`);
+        setLot((prevLot) => prevLot && { ...prevLot, accountStatus: updatedStatus });
+      } else {
+        console.error("Failed to update Lots.json.");
+      }
+    } catch (error) {
+      console.error("Error updating Lots.json:", error);
     }
   };
 
@@ -248,6 +279,11 @@ const Customer: React.FC = () => {
         <button
           className={`action-button ${editMode ? "edit-active" : ""}`}
           onClick={toggleEditMode}
+          disabled={lot?.accountStatus === "suspended"}
+          style={{
+            opacity: lot?.accountStatus === "suspended" ? 0.5 : 1,
+            pointerEvents: lot?.accountStatus === "suspended" ? "none" : "auto",
+          }}
         >
           <img
             className="button-icon"
@@ -262,16 +298,27 @@ const Customer: React.FC = () => {
           <span>Edit</span>
         </button>
         <button
-          className="action-button"
-          disabled={editMode}
+          className={`action-button ${
+            lot?.accountStatus === "paused" ? "edit-active" : ""
+          }`}
+          onClick={() => toggleAccountStatus("paused")}
+          disabled={editMode || lot?.accountStatus === "suspended"}
           style={{
-            pointerEvents: editMode ? "none" : "auto",
-            opacity: editMode ? 0.5 : 1,
+            opacity:
+              editMode || lot?.accountStatus === "suspended" ? 0.5 : 1,
+            pointerEvents:
+              editMode || lot?.accountStatus === "suspended"
+                ? "none"
+                : "auto",
           }}
         >
           <img
             className="button-icon"
-            src="/assets/Pause.svg"
+            src={
+              lot?.accountStatus === "paused"
+                ? "/assets/PauseInverted.svg"
+                : "/assets/Pause.svg"
+            }
             alt="Pause Icon"
           />
           <img
@@ -279,19 +326,25 @@ const Customer: React.FC = () => {
             src="/assets/PauseInverted.svg"
             alt="Pause Icon Hover"
           />
-          <span>Pause</span>
+          <span>{lot?.accountStatus === "paused" ? "Paused" : "Pause"}</span>
         </button>
         <button
-          className="action-button"
-          disabled={editMode}
+          className={`action-button ${
+            lot?.accountStatus === "suspended" ? "edit-active" : ""
+          }`}
+          onClick={() => toggleAccountStatus("suspended")}
           style={{
-            pointerEvents: editMode ? "none" : "auto",
-            opacity: editMode ? 0.5 : 1,
+            opacity: 1,
+            pointerEvents: "auto",
           }}
         >
           <img
             className="button-icon"
-            src="/assets/Suspend.svg"
+            src={
+              lot?.accountStatus === "suspended"
+                ? "/assets/SuspendInverted.svg"
+                : "/assets/Suspend.svg"
+            }
             alt="Suspend Icon"
           />
           <img
@@ -299,7 +352,9 @@ const Customer: React.FC = () => {
             src="/assets/SuspendInverted.svg"
             alt="Suspend Icon Hover"
           />
-          <span>Suspend</span>
+          <span>
+            {lot?.accountStatus === "suspended" ? "Suspended" : "Suspend"}
+          </span>
         </button>
       </div>
 
