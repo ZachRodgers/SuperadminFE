@@ -1,0 +1,42 @@
+[
+    {
+        "lotID": "0000-0001",
+        "plate": "BDPW596",
+        "timestamp": "2024-01-01T05:00:00-05:00",
+        "state": "Exit",
+        "imagename": "placeholder",
+        "confidence": "90"
+    },
+    {
+        "lotID": "0000-0001",
+        "plate": "AAAA000",
+        "timestamp": "2024-01-02T06:00:00-05:00",
+        "state": "Enter",
+        "imagename": "placeholder",
+        "confidence": "89.9"
+    },
+    {
+        "lotID": "0000-0001",
+        "plate": "AAAA000",
+        "timestamp": "2024-01-03T07:30:00-05:00",
+        "state": "Enter",
+        "imagename": "placeholder",
+        "confidence": "99.3"
+    },
+    {
+        "lotID": "0000-0001",
+        "plate": "AAAA000",
+        "timestamp": "2024-01-03T07:34:56-05:00",
+        "state": "Exit",
+        "imagename": "placeholder",
+        "confidence": "40"
+    },
+    {
+        "lotID": "0000-0002",
+        "plate": "ZZZZ000",
+        "timestamp": "2024-01-03T07:30:00-05:00",
+        "state": "Enter",
+        "imagename": "placeholder",
+        "confidence": "90"
+    }
+]

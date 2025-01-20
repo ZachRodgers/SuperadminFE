@@ -1,5 +1,6 @@
 .sidebar {
   width: 310px;
+  min-width: 310px; /* Prevent shrinking on smaller resolutions */
   background-color: #1e1f21;
   padding: 40px;
   box-sizing: border-box;

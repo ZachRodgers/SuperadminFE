@@ -156,7 +156,7 @@ const Dashboard: React.FC = () => {
         <table className="dashboard-table">
           <thead>
             <tr>
-              {['lotID', 'companyName', 'location', 'purchaseDate'].map((key) => (
+              {['lotID', 'company', 'location', 'purchaseDate'].map((key) => (
                 <th
                   key={key}
                   onClick={() => handleSort(key as keyof Lot)}
