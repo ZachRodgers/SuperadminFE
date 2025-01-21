@@ -25,7 +25,10 @@ const VehicleLog: React.FC = () => {
     const [filteredVehicles, setFilteredVehicles] = useState<VehicleEntry[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [refreshProgress, setRefreshProgress] = useState<number>(0);
-    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: 'ascending' });
+    const [sortConfig, setSortConfig] = useState<SortConfig>({
+        key: 'timestamp', // Default sorting by Date
+        direction: 'ascending', // Default to ascending order
+    });
 
     useEffect(() => {
         fetchVehicleLog();
