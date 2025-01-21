@@ -151,7 +151,7 @@ const VehicleLog: React.FC = () => {
                     <img src="/assets/SearchBarIcon.svg" alt="Search" />
                     <input
                         type="text"
-                        placeholder="Search Plate, State, or Timestamp"
+                        placeholder="Search Plate, Date, State, Time or Confidence"
                         value={searchQuery}
                         onChange={handleSearch}
                     />

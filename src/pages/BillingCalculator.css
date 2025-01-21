@@ -1,0 +1,131 @@
+.billing-calculator {
+    padding: 0px;
+    background-color: #272A30;
+    color: #E5E5E5;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+.search-and-view {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: #363941;
+    border-radius: 25px;
+    padding: 1px 20px;
+    flex: 3;
+    height: 40px;
+}
+
+.search-bar img {
+    width: 18px;
+    margin-right: 10px;
+}
+
+.search-bar input {
+    width: 100%;
+    background-color: transparent;
+    border: none;
+    color: #E5E5E5;
+    font-size: 16px;
+    outline: none;
+}
+
+.view-settings-button {
+    flex: 1;
+    padding: 8px 20px;
+    background-color: transparent;
+    border: 2px solid #E5E5E5;
+    color: #E5E5E5;
+    border-radius: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+}
+
+.view-settings-button:hover {
+    background-color: #E5E5E5;
+    color: #272A30;
+}
+
+.billing-calculator-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.billing-calculator-table th {
+    text-align: left;
+    padding: 15px 20px;
+    background-color: #272A30;
+    color: #E5E5E5;
+    font-weight: bold;
+}
+
+.billing-calculator-table td {
+    padding: 15px 20px;
+    border-bottom: 1px solid #31343C;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.billing-calculator-table tr:nth-child(even) {
+    background-color: #31343C;
+}
+
+.billing-calculator-table tr:nth-child(odd) {
+    background-color: #2B2E35;
+}
+
+.billing-calculator-table tr:hover {
+    color: #ffffff;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.status-badge {
+    padding: 3px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.status-badge.paid,
+.status-badge.auto-paid {
+    background-color: #34592E;
+    color: #95FF84;
+}
+
+.status-badge.pending {
+    background-color: #666628;
+    color: #FFFF86;
+}
+
+.status-badge.violation {
+    background-color: #5B3535;
+    color: #FFA4A4;
+}
+
+.billing-calculator-table a {
+    color: #ffffff; /* Replace with your desired color */
+    text-decoration: none; /* Removes the underline if not needed */
+}
+
+.billing-calculator-table a:hover {
+    color: #ffffff; /* Optional: Color when hovered */
+    text-decoration: underline; /* Optional: Add underline on hover */
+}
+

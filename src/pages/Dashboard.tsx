@@ -148,7 +148,7 @@ const Dashboard: React.FC = () => {
           <img src="/assets/SearchBarIcon.svg" alt="Search" />
           <input
             type="text"
-            placeholder="Search LotID, Company Name, Date or Location"
+            placeholder="Search LotID, Company Name, Purchase Date or Location"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
