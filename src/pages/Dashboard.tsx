@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Dashboard.css';
 import { useNavigate } from 'react-router-dom';
+import Notifications from '../components/Notifications'; // Import Notifications
 import lotsData from '../data/Lots.json';
 
 const DEVICES_API_URL = 'http://localhost:5000/devices';
@@ -11,7 +12,7 @@ interface Lot {
   location: string;
   purchaseDate: string;
   adminPortal: string;
-  accountStatus: string; // Include accountStatus field
+  accountStatus: string;
 }
 
 interface DeviceStatus {
@@ -30,8 +31,10 @@ const Dashboard: React.FC = () => {
   const [devices, setDevices] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lotID', direction: 'ascending' });
+  const [isNotificationsVisible, setNotificationsVisible] = useState(false);
 
   const navigate = useNavigate();
+  const popupRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const parsedLots: Lot[] = lotsData.map((item: any) => ({
@@ -40,7 +43,7 @@ const Dashboard: React.FC = () => {
       location: item.location,
       purchaseDate: item.purchaseDate,
       adminPortal: item.adminPortal,
-      accountStatus: item.accountStatus, // Include accountStatus
+      accountStatus: item.accountStatus,
     }));
 
     setLots(parsedLots);
@@ -95,6 +98,29 @@ const Dashboard: React.FC = () => {
     navigate(`/lot/${lotID}/device-manager`);
   };
 
+  const toggleNotifications = () => {
+    setNotificationsVisible((prev) => !prev);
+  };
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        setNotificationsVisible(false);
+      }
+    };
+
+    if (isNotificationsVisible) {
+      document.addEventListener('click', handleClickOutside);
+    } else {
+      document.removeEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [isNotificationsVisible]);
+
   const normalizeString = (str: string): string => {
     return str.toLowerCase().replace(/[-_]/g, ' ');
   };
@@ -137,7 +163,14 @@ const Dashboard: React.FC = () => {
             <img src="/assets/LogotypeSuperAdminHorizontal.svg" alt="Logo" />
           </div>
           <div className="header-actions">
-            <img src="/assets/NotificationIcon.svg" alt="Notifications" className="icon" />
+            <div
+              className="icon-wrapper"
+              onClick={toggleNotifications}
+              ref={popupRef} // Attach ref to the container
+            >
+              <img src="/assets/NotificationIcon.svg" alt="Notifications" className="icon" />
+            </div>
+            {isNotificationsVisible && <Notifications onClose={() => setNotificationsVisible(false)} />}
             <img src="/assets/MessageIcon.svg" alt="Messages" className="icon" />
             <button onClick={handleLogout} className="logout-btn">Logout</button>
           </div>
@@ -156,7 +189,7 @@ const Dashboard: React.FC = () => {
         <table className="dashboard-table">
           <thead>
             <tr>
-              {['lotID', 'company', 'location', 'purchaseDate'].map((key) => (
+              {['lotID', 'companyName', 'location', 'purchaseDate'].map((key) => (
                 <th
                   key={key}
                   onClick={() => handleSort(key as keyof Lot)}

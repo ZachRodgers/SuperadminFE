@@ -32,13 +32,22 @@
   display: flex;
   align-items: center;
   gap: 60px;
+  position: relative; /* Enables child absolute positioning */
 }
+
 
 .icon {
   width: 30px;
   height: 30px;
   cursor: pointer;
 }
+
+.icon-wrapper {
+  position: relative; /* Ensures the popup aligns relative to the icon */
+  display: inline-block; /* Adjust layout to avoid affecting sibling elements */
+}
+
+
 
 .logout-btn {
   padding: 10px 20px;

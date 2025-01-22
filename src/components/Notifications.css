@@ -1,0 +1,94 @@
+.notifications {
+    position: absolute;
+    top: 70px; /* Adjust to your vertical spacing preference */
+    left: 7%; /* Start at the middle */
+    transform: translate(-50%, 0); /* Center horizontally */
+    margin-left: -5px; /* Adjust for any slight offset if needed */
+    background: #363941;
+    color: #fff;
+    border-radius: 8px;
+    border: 2px solid #272A30;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 340px;
+    z-index: 100;
+  }
+  
+  .notifications::before {
+    content: ''; /* Generate the arrow */
+    position: absolute;
+    top: -10px; /* Position above the popup */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent; /* Left side of the triangle */
+    border-right: 10px solid transparent; /* Right side of the triangle */
+    border-bottom: 10px solid #363941; /* Arrow color matches popup background */
+  }
+  
+  .notifications::after {
+    content: ''; /* Create border for the arrow */
+    position: absolute;
+    top: -12px; /* Position slightly above the arrow */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent; /* Left side of the border triangle */
+    border-right: 12px solid transparent; /* Right side of the border triangle */
+    border-bottom: 12px solid #272A30; /* Matches popup border color */
+    z-index: -1; /* Place behind the arrow */
+  }
+  
+  
+  .notifications-section h5 {
+    margin: 0;
+    text-align: center;
+    color: #ffffff;
+    padding: 15px;
+    font-size: 15px;
+    font-weight: 500px;
+  }
+  
+  .notification-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    background: #3F424B;
+  }
+  
+  .notification-item.new .notification-dot {
+    height: 8px;
+    width: 8px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    margin-right: 10px;
+  }
+  
+  .notification-item.old {
+    margin-left: 18px; /* Adjust for alignment without dot */
+  }
+  
+  .view-more {
+    display: block;
+    background: #3F424B;
+    color: #dedede;
+    border: none;
+    padding: px 15px;
+    cursor: pointer;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 400;
+    border-radius: 0px;
+    margin: 0px;
+    text-decoration: underline;
+    border-radius: 0 0 8px 8px;
+  }
+
+  .view-more:hover {
+    background: #3F424B;
+    color: #fff;
+    text-decoration: underline;
+    font-weight: 500;
+  }
+  
