@@ -55,8 +55,18 @@ const Sidebar: React.FC = () => {
         </li>
       </ul>
       <div className="footer">
-        <button className="link-button" onClick={() => {/* handle click event */}}>🡥 Admin Portal</button>
-        <button className="link-button" onClick={() => {/* handle click event */}}>Send Message</button>
+        <button
+          className="link-button"
+          onClick={() => window.open("https://google.com", "_blank")}
+        >
+          🡥 Admin Portal
+        </button>
+        <button
+          className="link-button"
+          onClick={() => alert("Messaging Functionality coming soon...")}
+        >
+          Send Message
+        </button>
       </div>
     </div>
   );
