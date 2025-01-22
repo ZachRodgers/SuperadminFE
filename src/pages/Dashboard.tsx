@@ -126,26 +126,37 @@ const Dashboard: React.FC = () => {
   };
 
   const filteredLots = lots
-    .filter((lot) => lot.accountStatus !== 'suspended') // Exclude suspended lots
-    .filter((lot) => {
-      const normalizedData = normalizeString(
+  .filter((lot) => {
+    const normalizedSearch = normalizeString(searchQuery);
+
+    // Include suspended lots only if "suspended" is in the search query
+    if (normalizedSearch.includes("suspended")) {
+      return normalizeString(
+        `${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate} ${lot.accountStatus}`
+      ).includes(normalizedSearch);
+    }
+
+    // Default filtering to exclude suspended lots
+    return (
+      lot.accountStatus !== "suspended" &&
+      normalizeString(
         `${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate}`
-      );
-      const normalizedSearch = normalizeString(searchQuery);
-      return normalizedData.includes(normalizedSearch);
-    })
-    .sort((a, b) => {
-      if (sortConfig.key) {
-        const aVal = a[sortConfig.key];
-        const bVal = b[sortConfig.key];
-        if (sortConfig.direction === 'ascending') {
-          return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-        } else {
-          return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
-        }
+      ).includes(normalizedSearch)
+    );
+  })
+  .sort((a, b) => {
+    if (sortConfig.key) {
+      const aVal = a[sortConfig.key];
+      const bVal = b[sortConfig.key];
+      if (sortConfig.direction === "ascending") {
+        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      } else {
+        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
       }
-      return 0;
-    });
+    }
+    return 0;
+  });
+
 
   const handleSort = (key: keyof Lot) => {
     let direction: 'ascending' | 'descending' = 'ascending';
