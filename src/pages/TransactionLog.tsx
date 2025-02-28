@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom'; // Import useParams
-import './BillingCalculator.css';
+import './TransactionLog.css';
 import billingData from '../data/BillingCalculator.json';
 
 interface BillingEntry {
@@ -111,7 +111,7 @@ const BillingCalculator: React.FC = () => {
 
     return (
         <div className="billing-calculator">
-            <h1>Billing Calculator</h1>
+            <h1>Transaction Log</h1>
             <div className="search-and-view">
                 <div className="search-bar">
                     <img src="/assets/SearchBarIcon.svg" alt="Search" />

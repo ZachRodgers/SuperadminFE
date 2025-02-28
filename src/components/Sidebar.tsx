@@ -11,7 +11,7 @@ const Sidebar: React.FC = () => {
   const getActivePage = (): string | null => {
     if (location.pathname.includes("device-manager")) return "device-manager";
     if (location.pathname.includes("vehicle-log")) return "vehicle-log";
-    if (location.pathname.includes("billing-calculator")) return "billing-calculator";
+    if (location.pathname.includes("transaction-log")) return "transaction-log";
     if (location.pathname.includes("customer")) return "customer";
     return null;
   };
@@ -42,10 +42,10 @@ const Sidebar: React.FC = () => {
           <button>Vehicle Log</button>
         </li>
         <li
-          className={activePage === "billing-calculator" ? "active" : ""}
-          onClick={() => navigate(`/lot/${lotId}/billing-calculator`)}
+          className={activePage === "transaction-log" ? "active" : ""}
+          onClick={() => navigate(`/lot/${lotId}/transaction-log`)}
         >
-          <button>Billing Calculator</button>
+          <button>Transaction Log</button>
         </li>
         <li
           className={activePage === "customer" ? "active" : ""}

@@ -4,7 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import DeviceManager from './pages/DeviceManager';
 import VehicleLog from './pages/VehicleLog';
-import BillingCalculator from './pages/BillingCalculator';
+import BillingCalculator from './pages/TransactionLog';
 import Customer from './pages/Customer';
 import Sidebar from './components/Sidebar';
 import './App.css';
@@ -39,7 +39,7 @@ const App: React.FC = () => {
                     <Routes>
                       <Route path="device-manager" element={<DeviceManager />} />
                       <Route path="vehicle-log" element={<VehicleLog />} />
-                      <Route path="billing-calculator" element={<BillingCalculator />} />
+                      <Route path="transaction-log" element={<BillingCalculator />} />
                       <Route path="customer" element={<Customer />} />
                     </Routes>
                   </div>
