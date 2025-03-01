@@ -98,3 +98,50 @@ app.put('/update-lots', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+const vehicleLogFilePath = './src/data/VehicleLog.json';
+
+// Read Vehicle Log
+app.get('/vehicle-log', (req, res) => {
+    fs.readFile(vehicleLogFilePath, 'utf8', (err, data) => {
+        if (err) {
+            res.status(500).send('Error reading vehicle log file');
+        } else {
+            res.json(JSON.parse(data));
+        }
+    });
+});
+
+// Add new ALPR entry to VehicleLog.json
+app.post('/vehicle-log', (req, res) => {
+    const { plate, timestamp, state, confidence, lotID } = req.body;
+
+    if (!plate || !timestamp || !state || !confidence || !lotID) {
+        return res.status(400).send('Missing required fields');
+    }
+
+    fs.readFile(vehicleLogFilePath, 'utf8', (err, data) => {
+        if (err) {
+            return res.status(500).send('Error reading vehicle log file');
+        }
+
+        let vehicleLog = JSON.parse(data);
+        const newEntry = {
+            lotID,
+            plate,
+            timestamp,
+            state,
+            imagename: "placeholder",
+            confidence
+        };
+
+        vehicleLog.push(newEntry);
+
+        fs.writeFile(vehicleLogFilePath, JSON.stringify(vehicleLog, null, 2), (writeErr) => {
+            if (writeErr) {
+                return res.status(500).send('Error writing to vehicle log file');
+            }
+            res.status(200).send('Entry added successfully');
+        });
+    });
+});
