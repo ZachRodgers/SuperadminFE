@@ -1,42 +1,80 @@
 [
-    {
-        "lotID": "0000-0001",
-        "plate": "BDPW596",
-        "timestamp": "2024-01-01T05:00:00-05:00",
-        "state": "Exit",
-        "imagename": "placeholder",
-        "confidence": "90"
-    },
-    {
-        "lotID": "0000-0001",
-        "plate": "AAAA000",
-        "timestamp": "2024-01-02T06:00:00-05:00",
-        "state": "Enter",
-        "imagename": "placeholder",
-        "confidence": "89.9"
-    },
-    {
-        "lotID": "0000-0001",
-        "plate": "AAAA000",
-        "timestamp": "2024-01-03T07:30:00-05:00",
-        "state": "Enter",
-        "imagename": "placeholder",
-        "confidence": "99.3"
-    },
-    {
-        "lotID": "0000-0001",
-        "plate": "AAAA000",
-        "timestamp": "2024-01-03T07:34:56-05:00",
-        "state": "Exit",
-        "imagename": "placeholder",
-        "confidence": "40"
-    },
-    {
-        "lotID": "0000-0002",
-        "plate": "ZZZZ000",
-        "timestamp": "2024-01-03T07:30:00-05:00",
-        "state": "Enter",
-        "imagename": "placeholder",
-        "confidence": "90"
-    }
+  {
+    "deviceID": "",
+    "plateNumber": "BDPW596",
+    "imageURL": "",
+    "timestamp": "2024-01-01T05:00:00-05:00",
+    "lotID": "0000-0001",
+    "confidence": "90",
+    "status": "Exit",
+    "vehicleType": "",
+    "vehicleMake": "",
+    "vehicleModel": "",
+    "deviceTemp": ""
+  },
+  {
+    "deviceID": "",
+    "plateNumber": "AAAA000",
+    "imageURL": "",
+    "timestamp": "2024-01-02T06:00:00-05:00",
+    "lotID": "0000-0001",
+    "confidence": "89.9",
+    "status": "Enter",
+    "vehicleType": "",
+    "vehicleMake": "",
+    "vehicleModel": "",
+    "deviceTemp": ""
+  },
+  {
+    "deviceID": "",
+    "plateNumber": "AAAA000",
+    "imageURL": "",
+    "timestamp": "2024-01-03T07:30:00-05:00",
+    "lotID": "0000-0001",
+    "confidence": "99.3",
+    "status": "Enter",
+    "vehicleType": "",
+    "vehicleMake": "",
+    "vehicleModel": "",
+    "deviceTemp": ""
+  },
+  {
+    "deviceID": "",
+    "plateNumber": "AAAA000",
+    "imageURL": "",
+    "timestamp": "2024-01-03T07:34:56-05:00",
+    "lotID": "0000-0001",
+    "confidence": "40",
+    "status": "Exit",
+    "vehicleType": "",
+    "vehicleMake": "",
+    "vehicleModel": "",
+    "deviceTemp": ""
+  },
+  {
+    "deviceID": "",
+    "plateNumber": "ZZZZ000",
+    "imageURL": "",
+    "timestamp": "2024-01-03T07:30:00-05:00",
+    "lotID": "0000-0002",
+    "confidence": "90",
+    "status": "Enter",
+    "vehicleType": "",
+    "vehicleMake": "",
+    "vehicleModel": "",
+    "deviceTemp": ""
+  },
+  {
+    "deviceID": "",
+    "plateNumber": "TEST001",
+    "imageURL": "",
+    "timestamp": "2025-02-28T10:33",
+    "lotID": "0000-0001",
+    "confidence": "101",
+    "status": "Enter",
+    "vehicleType": "",
+    "vehicleMake": "",
+    "vehicleModel": "",
+    "deviceTemp": ""
+  }
 ]

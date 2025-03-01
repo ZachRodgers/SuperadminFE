@@ -9,7 +9,7 @@ interface VehicleEntry {
     timestamp: string;
     state: string;
     imagename: string;
-    confidence: string; // New confidence field
+    confidence: string;
 }
 
 interface SortConfig {
@@ -34,8 +34,7 @@ const VehicleLog: React.FC = () => {
     const [newEntry, setNewEntry] = useState({
         plate: '',
         timestamp: '',
-        state: 'Enter',   // default selection
-        confidence: '',
+        state: 'Enter', // default
     });
 
     // Fetch vehicle log from backend
@@ -57,7 +56,7 @@ const VehicleLog: React.FC = () => {
         return () => clearInterval(interval);
     }, [refreshProgress]);
 
-    // Load the vehicle log from the server and filter by lot
+    // Load log and filter by lot
     const fetchVehicleLog = async () => {
         try {
             const response = await fetch('http://localhost:5000/vehicle-log');
@@ -86,46 +85,44 @@ const VehicleLog: React.FC = () => {
         setSearchQuery(e.target.value.toLowerCase());
     };
 
-    // Sorting + searching results
+    // Filter + sort
     const filteredResults = filteredVehicles
         .filter((entry) => {
             const normalizedData = `${entry.plate} ${entry.state} ${entry.timestamp} ${entry.confidence}`.toLowerCase();
             return normalizedData.includes(searchQuery);
         })
         .sort((a, b) => {
-            if (sortConfig.key) {
-                let aVal: string | number = '';
-                let bVal: string | number = '';
+            if (!sortConfig.key) return 0;
+            let aVal: string | number = '';
+            let bVal: string | number = '';
 
-                if (sortConfig.key === 'timestamp') {
-                    // Compare by date portion only (YYYY-MM-DD)
-                    aVal = new Date(a.timestamp).toISOString().split('T')[0];
-                    bVal = new Date(b.timestamp).toISOString().split('T')[0];
-                } else if (sortConfig.key === 'time') {
-                    // Compare by time portion only
-                    aVal = new Date(a.timestamp).toLocaleTimeString('en-US', { hour12: false });
-                    bVal = new Date(b.timestamp).toLocaleTimeString('en-US', { hour12: false });
-                } else if (sortConfig.key === 'confidence') {
-                    aVal = parseFloat(a.confidence);
-                    bVal = parseFloat(b.confidence);
-                } else {
-                    aVal = (a as any)[sortConfig.key];
-                    bVal = (b as any)[sortConfig.key];
-                }
-
-                if (sortConfig.direction === 'ascending') {
-                    return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-                } else {
-                    return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
-                }
+            if (sortConfig.key === 'timestamp') {
+                // Compare dates (YYYY-MM-DD)
+                aVal = new Date(a.timestamp).toISOString().split('T')[0];
+                bVal = new Date(b.timestamp).toISOString().split('T')[0];
+            } else if (sortConfig.key === 'time') {
+                // Compare times (HH:MM:SS)
+                aVal = new Date(a.timestamp).toLocaleTimeString('en-US', { hour12: false });
+                bVal = new Date(b.timestamp).toLocaleTimeString('en-US', { hour12: false });
+            } else if (sortConfig.key === 'confidence') {
+                aVal = parseFloat(a.confidence);
+                bVal = parseFloat(b.confidence);
+            } else {
+                aVal = (a as any)[sortConfig.key];
+                bVal = (b as any)[sortConfig.key];
             }
-            return 0;
+
+            if (sortConfig.direction === 'ascending') {
+                return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+            } else {
+                return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+            }
         });
 
-    // Parse timestamp into separate date/time strings
+    // Parse timestamp into separate date/time
     const parseTimestamp = (timestamp: string) => {
         const localDate = new Date(timestamp);
-        const date = localDate.toISOString().split('T')[0]; // YYYY-MM-DD
+        const date = localDate.toISOString().split('T')[0];
         const time = localDate.toLocaleTimeString('en-US', {
             hour12: false,
             timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -156,7 +153,7 @@ const VehicleLog: React.FC = () => {
         window.URL.revokeObjectURL(url);
     };
 
-    // Change sort key/direction
+    // Toggle sort
     const handleSort = (key: keyof VehicleEntry | 'time') => {
         let direction: 'ascending' | 'descending' = 'ascending';
         if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -165,10 +162,11 @@ const VehicleLog: React.FC = () => {
         setSortConfig({ key, direction });
     };
 
-    // Submit a new manual ALPR entry
+    // Submit new manual entry (confidence => 101)
     const handleAddEntry = async () => {
-        const { plate, timestamp, state, confidence } = newEntry;
-        if (!plate || !timestamp || !confidence) {
+        const { plate, timestamp, state } = newEntry;
+
+        if (!plate || !timestamp) {
             alert('Please fill all required fields');
             return;
         }
@@ -176,16 +174,14 @@ const VehicleLog: React.FC = () => {
         try {
             const response = await fetch('http://localhost:5000/vehicle-log', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     lotID: lotId,
                     plate,
                     timestamp,
                     state,
                     imagename: 'placeholder',
-                    confidence,
+                    confidence: '101', // always 101% for manual
                 }),
             });
 
@@ -197,7 +193,7 @@ const VehicleLog: React.FC = () => {
             fetchVehicleLog();
             // Close modal, reset fields
             setShowModal(false);
-            setNewEntry({ plate: '', timestamp: '', state: 'Enter', confidence: '' });
+            setNewEntry({ plate: '', timestamp: '', state: 'Enter' });
         } catch (error) {
             console.error(error);
             alert('Error adding entry');
@@ -217,13 +213,10 @@ const VehicleLog: React.FC = () => {
                     {refreshProgress < 100 ? 'Refreshing...' : 'Manual Refresh'}
                 </div>
             </div>
+
             <h1>Vehicle Log</h1>
 
-            {/* Button to open modal for new entry */}
-            <button className="add-entry-button" onClick={() => setShowModal(true)}>
-                Add ALPR Entry
-            </button>
-
+            {/* Search bar + two buttons side by side */}
             <div className="search-and-download">
                 <div className="search-bar">
                     <img src="/assets/SearchBarIcon.svg" alt="Search" />
@@ -234,8 +227,18 @@ const VehicleLog: React.FC = () => {
                         onChange={handleSearch}
                     />
                 </div>
+
                 <button className="download-button" onClick={handleDownload}>
                     Download as Sheet
+                </button>
+
+                {/* New “Add Manual Entry” button */}
+                <button
+                    className="download-button"
+                    onClick={() => setShowModal(true)}
+                    style={{ marginRight: '0' }}
+                >
+                    Add Manual Entry
                 </button>
             </div>
 
@@ -251,12 +254,12 @@ const VehicleLog: React.FC = () => {
                                         : '/assets/FilterArrow.svg'
                                 }
                                 alt="Sort Arrow"
-                                className={`sort-arrow ${
+                                className={
                                     sortConfig.key === 'plate' &&
                                     sortConfig.direction === 'descending'
-                                        ? 'descending'
-                                        : ''
-                                }`}
+                                        ? 'sort-arrow descending'
+                                        : 'sort-arrow'
+                                }
                             />
                         </th>
                         <th onClick={() => handleSort('timestamp')} className="sortable-column">
@@ -268,12 +271,12 @@ const VehicleLog: React.FC = () => {
                                         : '/assets/FilterArrow.svg'
                                 }
                                 alt="Sort Arrow"
-                                className={`sort-arrow ${
+                                className={
                                     sortConfig.key === 'timestamp' &&
                                     sortConfig.direction === 'descending'
-                                        ? 'descending'
-                                        : ''
-                                }`}
+                                        ? 'sort-arrow descending'
+                                        : 'sort-arrow'
+                                }
                             />
                         </th>
                         <th onClick={() => handleSort('time')} className="sortable-column">
@@ -285,12 +288,12 @@ const VehicleLog: React.FC = () => {
                                         : '/assets/FilterArrow.svg'
                                 }
                                 alt="Sort Arrow"
-                                className={`sort-arrow ${
+                                className={
                                     sortConfig.key === 'time' &&
                                     sortConfig.direction === 'descending'
-                                        ? 'descending'
-                                        : ''
-                                }`}
+                                        ? 'sort-arrow descending'
+                                        : 'sort-arrow'
+                                }
                             />
                         </th>
                         <th onClick={() => handleSort('state')} className="sortable-column">
@@ -302,12 +305,12 @@ const VehicleLog: React.FC = () => {
                                         : '/assets/FilterArrow.svg'
                                 }
                                 alt="Sort Arrow"
-                                className={`sort-arrow ${
+                                className={
                                     sortConfig.key === 'state' &&
                                     sortConfig.direction === 'descending'
-                                        ? 'descending'
-                                        : ''
-                                }`}
+                                        ? 'sort-arrow descending'
+                                        : 'sort-arrow'
+                                }
                             />
                         </th>
                         <th onClick={() => handleSort('confidence')} className="sortable-column">
@@ -319,12 +322,12 @@ const VehicleLog: React.FC = () => {
                                         : '/assets/FilterArrow.svg'
                                 }
                                 alt="Sort Arrow"
-                                className={`sort-arrow ${
+                                className={
                                     sortConfig.key === 'confidence' &&
                                     sortConfig.direction === 'descending'
-                                        ? 'descending'
-                                        : ''
-                                }`}
+                                        ? 'sort-arrow descending'
+                                        : 'sort-arrow'
+                                }
                             />
                         </th>
                         <th>Image</th>
@@ -364,7 +367,7 @@ const VehicleLog: React.FC = () => {
             {showModal && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h2>Add ALPR Entry</h2>
+                        <h2>Add Manual Entry</h2>
 
                         <label>Plate Number:</label>
                         <input
@@ -377,7 +380,9 @@ const VehicleLog: React.FC = () => {
                         <input
                             type="datetime-local"
                             value={newEntry.timestamp}
-                            onChange={(e) => setNewEntry({ ...newEntry, timestamp: e.target.value })}
+                            onChange={(e) =>
+                                setNewEntry({ ...newEntry, timestamp: e.target.value })
+                            }
                         />
 
                         <label>State:</label>
@@ -388,15 +393,6 @@ const VehicleLog: React.FC = () => {
                             <option value="Enter">Enter</option>
                             <option value="Exit">Exit</option>
                         </select>
-
-                        <label>Confidence:</label>
-                        <input
-                            type="text"
-                            value={newEntry.confidence}
-                            onChange={(e) =>
-                                setNewEntry({ ...newEntry, confidence: e.target.value })
-                            }
-                        />
 
                         <div className="button-group">
                             <button className="submit-button" onClick={handleAddEntry}>
