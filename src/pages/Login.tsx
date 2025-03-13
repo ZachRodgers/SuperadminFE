@@ -1,3 +1,4 @@
+import axios from 'axios';
 import React, { useState } from 'react';
 import './Login.css';
 
@@ -6,14 +7,21 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
 
-  const handleLogin = () => {
-    if (username === 'superadmin' && password === 'superadmin') {
-      localStorage.setItem('isAuthenticated', 'true'); // Store as a string
-      window.location.href = '/dashboard'; // Redirect to Dashboard
-    } else {
-      setError('Invalid username or password');
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post('http://localhost:8085/ParkingWithParallel/users/login', {
+        email: username,
+        password: password
+      });
+      const token = response.data.token;
+      localStorage.setItem('token', token);
+      localStorage.setItem('isAuthenticated', 'true');
+      window.location.href = '/dashboard';
+    } catch (err) {
+      setError('Invalid credentials');
     }
   };
+  
 
   return (
     <div className="login-container">
