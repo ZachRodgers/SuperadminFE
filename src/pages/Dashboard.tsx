@@ -3,7 +3,6 @@ import './Dashboard.css';
 import { useNavigate } from 'react-router-dom';
 import Notifications from '../components/Notifications';
 
-// Updated endpoints
 const LOTS_API_URL = 'http://localhost:8085/ParkingWithParallel/parkinglots';
 const DEVICES_API_URL = 'http://localhost:8085/ParkingWithParallel/devices';
 
@@ -23,7 +22,7 @@ interface Device {
   isWifiRegistered: boolean;
   wifiNetworkName: string;
   wifiPassword: string;
-  deviceStatus: string;
+  deviceStatus: string; // Online, Offline, RecentlyAdded, Calibrating
   lastActive: string;
   deviceTemp: number;
   createdOn: string;
@@ -33,8 +32,10 @@ interface Device {
   isDeleted: boolean;
 }
 
-interface DeviceStatus {
+// We now track how many devices are online, calibrating, offline, and total
+interface DeviceStatusCounts {
   online: number;
+  calibrating: number;
   offline: number;
   total: number;
 }
@@ -48,7 +49,10 @@ const Dashboard: React.FC = () => {
   const [lots, setLots] = useState<Lot[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lotID', direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    key: 'lotID',
+    direction: 'ascending',
+  });
   const [isNotificationsVisible, setNotificationsVisible] = useState(false);
 
   const navigate = useNavigate();
@@ -69,8 +73,10 @@ const Dashboard: React.FC = () => {
           lotID: item.lotId,
           companyName: item.companyName,
           location: item.address, // Using address as location
-          purchaseDate: item.createdOn ? new Date(item.createdOn).toLocaleDateString() : 'N/A',
-          adminPortal: 'https://google.ca', // Placeholder (if not stored in DB)
+          purchaseDate: item.createdOn
+            ? new Date(item.createdOn).toLocaleDateString()
+            : 'N/A',
+          adminPortal: 'https://google.ca', // Placeholder if not stored in DB
           accountStatus: item.accountStatus,
         }));
         setLots(parsedLots);
@@ -102,14 +108,29 @@ const Dashboard: React.FC = () => {
     fetchDevices();
   }, []);
 
-  // Updated device status calculation for device objects
-  const calculateDeviceStatus = (lotID: string): DeviceStatus => {
+  /**
+   * Count how many devices for a given lot are online, calibrating, offline, etc.
+   */
+  const calculateDeviceStatus = (lotID: string): DeviceStatusCounts => {
     const relevantDevices = devices.filter((device) => device.lotId === lotID);
-    const onlineCount = relevantDevices.filter((device) => device.deviceStatus === 'Online').length;
-    const offlineCount = relevantDevices.filter((device) =>
-      device.deviceStatus === 'Offline' || device.deviceStatus === 'RecentlyAdded'
+
+    const onlineCount = relevantDevices.filter(
+      (device) => device.deviceStatus === 'Online'
     ).length;
-    return { online: onlineCount, offline: offlineCount, total: relevantDevices.length };
+    const calibratingCount = relevantDevices.filter(
+      (device) => device.deviceStatus === 'Calibrating'
+    ).length;
+    const offlineCount = relevantDevices.filter(
+      (device) =>
+        device.deviceStatus === 'Offline' || device.deviceStatus === 'RecentlyAdded'
+    ).length;
+
+    return {
+      online: onlineCount,
+      calibrating: calibratingCount,
+      offline: offlineCount,
+      total: relevantDevices.length,
+    };
   };
 
   const handleLogout = () => {
@@ -148,6 +169,7 @@ const Dashboard: React.FC = () => {
     return str.toLowerCase().replace(/[-_]/g, ' ');
   };
 
+  // Filter out suspended lots unless "suspended" is typed in
   const filteredLots = lots
     .filter((lot) => {
       const normalizedSearch = normalizeString(searchQuery);
@@ -159,7 +181,9 @@ const Dashboard: React.FC = () => {
       // Exclude suspended lots by default
       return (
         lot.accountStatus !== 'suspended' &&
-        normalizeString(`${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate}`).includes(normalizedSearch)
+        normalizeString(
+          `${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate}`
+        ).includes(normalizedSearch)
       );
     })
     .sort((a, b) => {
@@ -191,10 +215,20 @@ const Dashboard: React.FC = () => {
             <img src="/assets/LogotypeSuperAdminHorizontal.svg" alt="Logo" />
           </div>
           <div className="header-actions">
-            <div className="icon-wrapper" onClick={toggleNotifications} ref={popupRef}>
-              <img src="/assets/NotificationIcon.svg" alt="Notifications" className="icon" />
+            <div
+              className="icon-wrapper"
+              onClick={toggleNotifications}
+              ref={popupRef}
+            >
+              <img
+                src="/assets/NotificationIcon.svg"
+                alt="Notifications"
+                className="icon"
+              />
             </div>
-            {isNotificationsVisible && <Notifications onClose={() => setNotificationsVisible(false)} />}
+            {isNotificationsVisible && (
+              <Notifications onClose={() => setNotificationsVisible(false)} />
+            )}
             <img src="/assets/MessageIcon.svg" alt="Messages" className="icon" />
             <button onClick={handleLogout} className="logout-btn">
               Logout
@@ -202,6 +236,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </header>
+
       <div className="dashboard-content">
         <div className="search-bar">
           <img src="/assets/SearchBarIcon.svg" alt="Search" />
@@ -212,17 +247,31 @@ const Dashboard: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+
         <table className="dashboard-table">
           <thead>
             <tr>
               {['lotID', 'companyName', 'location', 'purchaseDate'].map((key) => (
-                <th key={key} onClick={() => handleSort(key as keyof Lot)} className="sortable-column">
-                  {key === 'purchaseDate' ? 'Purchased' : key.charAt(0).toUpperCase() + key.slice(1)}
+                <th
+                  key={key}
+                  onClick={() => handleSort(key as keyof Lot)}
+                  className="sortable-column"
+                >
+                  {key === 'purchaseDate'
+                    ? 'Purchased'
+                    : key.charAt(0).toUpperCase() + key.slice(1)}
                   <img
-                    src={sortConfig.key === key ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                    src={
+                      sortConfig.key === key
+                        ? '/assets/FilterArrowSelected.svg'
+                        : '/assets/FilterArrow.svg'
+                    }
                     alt="Sort Arrow"
                     className={`sort-arrow ${
-                      sortConfig.key === key && sortConfig.direction === 'descending' ? 'descending' : ''
+                      sortConfig.key === key &&
+                      sortConfig.direction === 'descending'
+                        ? 'descending'
+                        : ''
                     }`}
                   />
                 </th>
@@ -233,9 +282,34 @@ const Dashboard: React.FC = () => {
           </thead>
           <tbody>
             {filteredLots.map((lot, index) => {
-              const { online, offline, total } = calculateDeviceStatus(lot.lotID);
+              // Now includes calibrating
+              const { online, calibrating, offline, total } = calculateDeviceStatus(
+                lot.lotID
+              );
+
+              // We'll show up to 8 dots total
               const visibleDevices = 8;
               const additionalDevices = total - visibleDevices;
+
+              /**
+               * We'll draw 'online' green dots first,
+               * then 'calibrating' blue dots,
+               * then the rest (offline + recentlyAdded) in red.
+               */
+              const dotsToRender = Array(Math.min(visibleDevices, total))
+                .fill(0)
+                .map((_, idx) => {
+                  if (idx < online) {
+                    // first 'online' are green
+                    return <span key={idx} className="dot green"></span>;
+                  } else if (idx < online + calibrating) {
+                    // next 'calibrating' are blue
+                    return <span key={idx} className="dot blue"></span>;
+                  } else {
+                    // remainder are red (offline or recentlyAdded)
+                    return <span key={idx} className="dot red"></span>;
+                  }
+                });
 
               return (
                 <tr key={index} onClick={() => handleOpenLot(lot.lotID)}>
@@ -244,12 +318,10 @@ const Dashboard: React.FC = () => {
                   <td>{lot.location}</td>
                   <td>{lot.purchaseDate}</td>
                   <td>
-                    {Array(Math.min(visibleDevices, total))
-                      .fill(0)
-                      .map((_, idx) => (
-                        <span key={`device-${idx}`} className={`dot ${idx < online ? 'green' : 'red'}`}></span>
-                      ))}
-                    {additionalDevices > 0 && <span className="extra-devices">+{additionalDevices}</span>}
+                    {dotsToRender}
+                    {additionalDevices > 0 && (
+                      <span className="extra-devices">+{additionalDevices}</span>
+                    )}
                   </td>
                   <td>
                     <a
