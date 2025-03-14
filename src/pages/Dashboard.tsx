@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Dashboard.css';
 import { useNavigate } from 'react-router-dom';
-import Notifications from '../components/Notifications'; // Import Notifications
-import lotsData from '../data/Lots.json';
+import Notifications from '../components/Notifications';
 
-const DEVICES_API_URL = 'http://localhost:5000/devices';
+// Updated endpoints
+const LOTS_API_URL = 'http://localhost:8085/ParkingWithParallel/parkinglots';
+const DEVICES_API_URL = 'http://localhost:8085/ParkingWithParallel/devices';
 
 interface Lot {
   lotID: string;
@@ -13,6 +14,23 @@ interface Lot {
   purchaseDate: string;
   adminPortal: string;
   accountStatus: string;
+}
+
+interface Device {
+  deviceId: string;
+  lotId: string;
+  deviceType: string;
+  isWifiRegistered: boolean;
+  wifiNetworkName: string;
+  wifiPassword: string;
+  deviceStatus: string;
+  lastActive: string;
+  deviceTemp: number;
+  createdOn: string;
+  createdBy: string;
+  modifiedOn: string;
+  modifiedBy: string;
+  isDeleted: boolean;
 }
 
 interface DeviceStatus {
@@ -28,7 +46,7 @@ interface SortConfig {
 
 const Dashboard: React.FC = () => {
   const [lots, setLots] = useState<Lot[]>([]);
-  const [devices, setDevices] = useState<string[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lotID', direction: 'ascending' });
   const [isNotificationsVisible, setNotificationsVisible] = useState(false);
@@ -36,25 +54,46 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const popupRef = useRef<HTMLDivElement | null>(null);
 
+  // Fetch lots from Spring Boot
   useEffect(() => {
-    const parsedLots: Lot[] = lotsData.map((item: any) => ({
-      lotID: item.lotID,
-      companyName: item.companyName,
-      location: item.location,
-      purchaseDate: item.purchaseDate,
-      adminPortal: item.adminPortal,
-      accountStatus: item.accountStatus,
-    }));
+    const fetchLots = async () => {
+      try {
+        const response = await fetch(LOTS_API_URL);
+        if (!response.ok) {
+          console.error('HTTP error', response.status);
+          return;
+        }
+        const data = await response.json();
+        // Map DB fields (lotId, address, createdOn, etc.) to our Lot interface
+        const parsedLots: Lot[] = data.map((item: any) => ({
+          lotID: item.lotId,
+          companyName: item.companyName,
+          location: item.address, // Using address as location
+          purchaseDate: item.createdOn ? new Date(item.createdOn).toLocaleDateString() : 'N/A',
+          adminPortal: 'https://google.ca', // Placeholder (if not stored in DB)
+          accountStatus: item.accountStatus,
+        }));
+        setLots(parsedLots);
+      } catch (error) {
+        console.error('Error fetching lots:', error);
+      }
+    };
 
-    setLots(parsedLots);
+    fetchLots();
   }, []);
 
+  // Fetch devices from Spring Boot
   useEffect(() => {
     const fetchDevices = async () => {
       try {
         const response = await fetch(DEVICES_API_URL);
+        if (!response.ok) {
+          console.error('HTTP error', response.status);
+          return;
+        }
         const data = await response.json();
-        setDevices(data.devices);
+        // The endpoint returns an array of device objects
+        setDevices(data);
       } catch (error) {
         console.error('Error fetching devices:', error);
       }
@@ -63,29 +102,13 @@ const Dashboard: React.FC = () => {
     fetchDevices();
   }, []);
 
+  // Updated device status calculation for device objects
   const calculateDeviceStatus = (lotID: string): DeviceStatus => {
-    const relevantDevices = devices.filter((device) => device.startsWith(`deviceID:${lotID}`));
-
-    const onlineCount = relevantDevices.filter((device) => {
-      const fields = Object.fromEntries(
-        device.split(';').map((field) => {
-          const [key, value] = field.split(':');
-          return [key, value?.trim()];
-        })
-      );
-      return fields.status === 'Online';
-    }).length;
-
-    const offlineCount = relevantDevices.filter((device) => {
-      const fields = Object.fromEntries(
-        device.split(';').map((field) => {
-          const [key, value] = field.split(':');
-          return [key, value?.trim()];
-        })
-      );
-      return fields.status === 'Offline' || fields.status === 'RecentlyAdded';
-    }).length;
-
+    const relevantDevices = devices.filter((device) => device.lotId === lotID);
+    const onlineCount = relevantDevices.filter((device) => device.deviceStatus === 'Online').length;
+    const offlineCount = relevantDevices.filter((device) =>
+      device.deviceStatus === 'Offline' || device.deviceStatus === 'RecentlyAdded'
+    ).length;
     return { online: onlineCount, offline: offlineCount, total: relevantDevices.length };
   };
 
@@ -126,37 +149,31 @@ const Dashboard: React.FC = () => {
   };
 
   const filteredLots = lots
-  .filter((lot) => {
-    const normalizedSearch = normalizeString(searchQuery);
-
-    // Include suspended lots only if "suspended" is in the search query
-    if (normalizedSearch.includes("suspended")) {
-      return normalizeString(
-        `${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate} ${lot.accountStatus}`
-      ).includes(normalizedSearch);
-    }
-
-    // Default filtering to exclude suspended lots
-    return (
-      lot.accountStatus !== "suspended" &&
-      normalizeString(
-        `${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate}`
-      ).includes(normalizedSearch)
-    );
-  })
-  .sort((a, b) => {
-    if (sortConfig.key) {
-      const aVal = a[sortConfig.key];
-      const bVal = b[sortConfig.key];
-      if (sortConfig.direction === "ascending") {
-        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-      } else {
-        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+    .filter((lot) => {
+      const normalizedSearch = normalizeString(searchQuery);
+      if (normalizedSearch.includes('suspended')) {
+        return normalizeString(
+          `${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate} ${lot.accountStatus}`
+        ).includes(normalizedSearch);
       }
-    }
-    return 0;
-  });
-
+      // Exclude suspended lots by default
+      return (
+        lot.accountStatus !== 'suspended' &&
+        normalizeString(`${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate}`).includes(normalizedSearch)
+      );
+    })
+    .sort((a, b) => {
+      if (sortConfig.key) {
+        const aVal = a[sortConfig.key];
+        const bVal = b[sortConfig.key];
+        if (sortConfig.direction === 'ascending') {
+          return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        } else {
+          return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+        }
+      }
+      return 0;
+    });
 
   const handleSort = (key: keyof Lot) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -174,16 +191,14 @@ const Dashboard: React.FC = () => {
             <img src="/assets/LogotypeSuperAdminHorizontal.svg" alt="Logo" />
           </div>
           <div className="header-actions">
-            <div
-              className="icon-wrapper"
-              onClick={toggleNotifications}
-              ref={popupRef} // Attach ref to the container
-            >
+            <div className="icon-wrapper" onClick={toggleNotifications} ref={popupRef}>
               <img src="/assets/NotificationIcon.svg" alt="Notifications" className="icon" />
             </div>
             {isNotificationsVisible && <Notifications onClose={() => setNotificationsVisible(false)} />}
             <img src="/assets/MessageIcon.svg" alt="Messages" className="icon" />
-            <button onClick={handleLogout} className="logout-btn">Logout</button>
+            <button onClick={handleLogout} className="logout-btn">
+              Logout
+            </button>
           </div>
         </div>
       </header>
@@ -201,23 +216,13 @@ const Dashboard: React.FC = () => {
           <thead>
             <tr>
               {['lotID', 'companyName', 'location', 'purchaseDate'].map((key) => (
-                <th
-                  key={key}
-                  onClick={() => handleSort(key as keyof Lot)}
-                  className="sortable-column"
-                >
+                <th key={key} onClick={() => handleSort(key as keyof Lot)} className="sortable-column">
                   {key === 'purchaseDate' ? 'Purchased' : key.charAt(0).toUpperCase() + key.slice(1)}
                   <img
-                    src={
-                      sortConfig.key === key
-                        ? '/assets/FilterArrowSelected.svg'
-                        : '/assets/FilterArrow.svg'
-                    }
+                    src={sortConfig.key === key ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
                     alt="Sort Arrow"
                     className={`sort-arrow ${
-                      sortConfig.key === key && sortConfig.direction === 'descending'
-                        ? 'descending'
-                        : ''
+                      sortConfig.key === key && sortConfig.direction === 'descending' ? 'descending' : ''
                     }`}
                   />
                 </th>
@@ -242,14 +247,9 @@ const Dashboard: React.FC = () => {
                     {Array(Math.min(visibleDevices, total))
                       .fill(0)
                       .map((_, idx) => (
-                        <span
-                          key={`device-${idx}`}
-                          className={`dot ${idx < online ? 'green' : 'red'}`}
-                        ></span>
+                        <span key={`device-${idx}`} className={`dot ${idx < online ? 'green' : 'red'}`}></span>
                       ))}
-                    {additionalDevices > 0 && (
-                      <span className="extra-devices">+{additionalDevices}</span>
-                    )}
+                    {additionalDevices > 0 && <span className="extra-devices">+{additionalDevices}</span>}
                   </td>
                   <td>
                     <a
