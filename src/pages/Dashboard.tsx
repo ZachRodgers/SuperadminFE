@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './Dashboard.css';
 import { useNavigate } from 'react-router-dom';
 import Notifications from '../components/Notifications';
+import AddLot from '../components/AddLot';
 
 const LOTS_API_URL = 'http://localhost:8085/ParkingWithParallel/parkinglots';
 const DEVICES_API_URL = 'http://localhost:8085/ParkingWithParallel/devices';
@@ -22,7 +23,7 @@ interface Device {
   isWifiRegistered: boolean;
   wifiNetworkName: string;
   wifiPassword: string;
-  deviceStatus: string; // Online, Offline, RecentlyAdded, Calibrating
+  deviceStatus: string;
   lastActive: string;
   deviceTemp: number;
   createdOn: string;
@@ -32,7 +33,6 @@ interface Device {
   isDeleted: boolean;
 }
 
-// We now track how many devices are online, calibrating, offline, and total
 interface DeviceStatusCounts {
   online: number;
   calibrating: number;
@@ -49,82 +49,73 @@ const Dashboard: React.FC = () => {
   const [lots, setLots] = useState<Lot[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: 'lotID',
-    direction: 'ascending',
-  });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lotID', direction: 'ascending' });
   const [isNotificationsVisible, setNotificationsVisible] = useState(false);
+
+  // New state for the "Add Lot" modal
+  const [showAddLotModal, setShowAddLotModal] = useState(false);
 
   const navigate = useNavigate();
   const popupRef = useRef<HTMLDivElement | null>(null);
 
   // Fetch lots from Spring Boot
-  useEffect(() => {
-    const fetchLots = async () => {
-      try {
-        const response = await fetch(LOTS_API_URL);
-        if (!response.ok) {
-          console.error('HTTP error', response.status);
-          return;
-        }
-        const data = await response.json();
-        // Map DB fields (lotId, address, createdOn, etc.) to our Lot interface
-        const parsedLots: Lot[] = data.map((item: any) => ({
-          lotID: item.lotId,
-          companyName: item.companyName,
-          location: item.address, // Using address as location
-          purchaseDate: item.createdOn
-            ? new Date(item.createdOn).toLocaleDateString()
-            : 'N/A',
-          adminPortal: 'https://google.ca', // Placeholder if not stored in DB
-          accountStatus: item.accountStatus,
-        }));
-        setLots(parsedLots);
-      } catch (error) {
-        console.error('Error fetching lots:', error);
+  const fetchLots = async () => {
+    try {
+      const response = await fetch(LOTS_API_URL);
+      if (!response.ok) {
+        console.error('HTTP error', response.status);
+        return;
       }
-    };
-
-    fetchLots();
-  }, []);
+      const data = await response.json();
+      // Map DB fields (lotId, address, createdOn, etc.) to our Lot interface
+      const parsedLots: Lot[] = data.map((item: any) => ({
+        lotID: item.lotId,
+        companyName: item.companyName,
+        location: item.address,
+        purchaseDate: item.createdOn ? new Date(item.createdOn).toLocaleDateString() : 'N/A',
+        adminPortal: 'https://google.ca', // Placeholder
+        accountStatus: item.accountStatus,
+      }));
+      setLots(parsedLots);
+    } catch (error) {
+      console.error('Error fetching lots:', error);
+    }
+  };
 
   // Fetch devices from Spring Boot
-  useEffect(() => {
-    const fetchDevices = async () => {
-      try {
-        const response = await fetch(DEVICES_API_URL);
-        if (!response.ok) {
-          console.error('HTTP error', response.status);
-          return;
-        }
-        const data = await response.json();
-        // The endpoint returns an array of device objects
-        setDevices(data);
-      } catch (error) {
-        console.error('Error fetching devices:', error);
+  const fetchDevices = async () => {
+    try {
+      const response = await fetch(DEVICES_API_URL);
+      if (!response.ok) {
+        console.error('HTTP error', response.status);
+        return;
       }
-    };
+      const data = await response.json();
+      setDevices(data);
+    } catch (error) {
+      console.error('Error fetching devices:', error);
+    }
+  };
 
+  useEffect(() => {
+    fetchLots();
     fetchDevices();
   }, []);
 
-  /**
-   * Count how many devices for a given lot are online, calibrating, offline, etc.
-   */
+  // Re-fetch lots after creating a new lot
+  const handleLotCreated = () => {
+    setShowAddLotModal(false);
+    fetchLots();
+  };
+
+  // Count device statuses for a given lot
   const calculateDeviceStatus = (lotID: string): DeviceStatusCounts => {
     const relevantDevices = devices.filter((device) => device.lotId === lotID);
-
-    const onlineCount = relevantDevices.filter(
-      (device) => device.deviceStatus === 'Online'
-    ).length;
-    const calibratingCount = relevantDevices.filter(
-      (device) => device.deviceStatus === 'Calibrating'
-    ).length;
+    const onlineCount = relevantDevices.filter((d) => d.deviceStatus === 'Online').length;
+    const calibratingCount = relevantDevices.filter((d) => d.deviceStatus === 'Calibrating').length;
     const offlineCount = relevantDevices.filter(
-      (device) =>
-        device.deviceStatus === 'Offline' || device.deviceStatus === 'RecentlyAdded'
+      (d) => d.deviceStatus === 'Offline' || d.deviceStatus === 'RecentlyAdded'
     ).length;
-
     return {
       online: onlineCount,
       calibrating: calibratingCount,
@@ -146,7 +137,7 @@ const Dashboard: React.FC = () => {
     setNotificationsVisible((prev) => !prev);
   };
 
-  // Close popup when clicking outside
+  // Close notifications if clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
@@ -159,7 +150,6 @@ const Dashboard: React.FC = () => {
     } else {
       document.removeEventListener('click', handleClickOutside);
     }
-
     return () => {
       document.removeEventListener('click', handleClickOutside);
     };
@@ -169,7 +159,6 @@ const Dashboard: React.FC = () => {
     return str.toLowerCase().replace(/[-_]/g, ' ');
   };
 
-  // Filter out suspended lots unless "suspended" is typed in
   const filteredLots = lots
     .filter((lot) => {
       const normalizedSearch = normalizeString(searchQuery);
@@ -181,9 +170,7 @@ const Dashboard: React.FC = () => {
       // Exclude suspended lots by default
       return (
         lot.accountStatus !== 'suspended' &&
-        normalizeString(
-          `${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate}`
-        ).includes(normalizedSearch)
+        normalizeString(`${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate}`).includes(normalizedSearch)
       );
     })
     .sort((a, b) => {
@@ -215,20 +202,10 @@ const Dashboard: React.FC = () => {
             <img src="/assets/LogotypeSuperAdminHorizontal.svg" alt="Logo" />
           </div>
           <div className="header-actions">
-            <div
-              className="icon-wrapper"
-              onClick={toggleNotifications}
-              ref={popupRef}
-            >
-              <img
-                src="/assets/NotificationIcon.svg"
-                alt="Notifications"
-                className="icon"
-              />
+            <div className="icon-wrapper" onClick={toggleNotifications} ref={popupRef}>
+              <img src="/assets/NotificationIcon.svg" alt="Notifications" className="icon" />
             </div>
-            {isNotificationsVisible && (
-              <Notifications onClose={() => setNotificationsVisible(false)} />
-            )}
+            {isNotificationsVisible && <Notifications onClose={() => setNotificationsVisible(false)} />}
             <img src="/assets/MessageIcon.svg" alt="Messages" className="icon" />
             <button onClick={handleLogout} className="logout-btn">
               Logout
@@ -238,14 +215,20 @@ const Dashboard: React.FC = () => {
       </header>
 
       <div className="dashboard-content">
-        <div className="search-bar">
-          <img src="/assets/SearchBarIcon.svg" alt="Search" />
-          <input
-            type="text"
-            placeholder="Search LotID, Company Name, Purchase Date or Location"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        {/* Search bar + new "Add Lot" button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+          <div className="search-bar" style={{ flex: '4' }}>
+            <img src="/assets/SearchBarIcon.svg" alt="Search" />
+            <input
+              type="text"
+              placeholder="Search LotID, Company Name, Purchase Date or Location"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <button className="addlot-button" onClick={() => setShowAddLotModal(true)}>
+            Add Lot
+          </button>
         </div>
 
         <table className="dashboard-table">
@@ -262,16 +245,11 @@ const Dashboard: React.FC = () => {
                     : key.charAt(0).toUpperCase() + key.slice(1)}
                   <img
                     src={
-                      sortConfig.key === key
-                        ? '/assets/FilterArrowSelected.svg'
-                        : '/assets/FilterArrow.svg'
+                      sortConfig.key === key ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'
                     }
                     alt="Sort Arrow"
                     className={`sort-arrow ${
-                      sortConfig.key === key &&
-                      sortConfig.direction === 'descending'
-                        ? 'descending'
-                        : ''
+                      sortConfig.key === key && sortConfig.direction === 'descending' ? 'descending' : ''
                     }`}
                   />
                 </th>
@@ -282,31 +260,19 @@ const Dashboard: React.FC = () => {
           </thead>
           <tbody>
             {filteredLots.map((lot, index) => {
-              // Now includes calibrating
-              const { online, calibrating, offline, total } = calculateDeviceStatus(
-                lot.lotID
-              );
-
-              // We'll show up to 8 dots total
+              const { online, calibrating, offline, total } = calculateDeviceStatus(lot.lotID);
               const visibleDevices = 8;
               const additionalDevices = total - visibleDevices;
 
-              /**
-               * We'll draw 'online' green dots first,
-               * then 'calibrating' blue dots,
-               * then the rest (offline + recentlyAdded) in red.
-               */
+              // Build up to 8 dots, first green for online, then blue for calibrating, then red for offline
               const dotsToRender = Array(Math.min(visibleDevices, total))
                 .fill(0)
                 .map((_, idx) => {
                   if (idx < online) {
-                    // first 'online' are green
                     return <span key={idx} className="dot green"></span>;
                   } else if (idx < online + calibrating) {
-                    // next 'calibrating' are blue
                     return <span key={idx} className="dot blue"></span>;
                   } else {
-                    // remainder are red (offline or recentlyAdded)
                     return <span key={idx} className="dot red"></span>;
                   }
                 });
@@ -319,9 +285,7 @@ const Dashboard: React.FC = () => {
                   <td>{lot.purchaseDate}</td>
                   <td>
                     {dotsToRender}
-                    {additionalDevices > 0 && (
-                      <span className="extra-devices">+{additionalDevices}</span>
-                    )}
+                    {additionalDevices > 0 && <span className="extra-devices">+{additionalDevices}</span>}
                   </td>
                   <td>
                     <a
@@ -339,6 +303,15 @@ const Dashboard: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* AddLot modal */}
+      {showAddLotModal && (
+        <AddLot
+          existingLots={lots}
+          onClose={() => setShowAddLotModal(false)}
+          onLotAdded={handleLotCreated}
+        />
+      )}
     </div>
   );
 };
