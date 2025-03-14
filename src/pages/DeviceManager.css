@@ -21,6 +21,10 @@
   border-left-color: #ed4343;
 }
 
+.device.calibrating {
+  border-left-color: #1782FF;
+}
+
 .device-info {
   flex: 3;
   padding: 0 20px;
