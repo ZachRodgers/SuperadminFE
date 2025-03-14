@@ -9,7 +9,7 @@ const Login: React.FC = () => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://localhost:8085/ParkingWithParallel/users/login', {
+      const response = await axios.post('http://localhost:8085/ParkingWithParallel/login', {
         email: username,
         password: password
       });
@@ -29,7 +29,7 @@ const Login: React.FC = () => {
         <img src="/assets/LogotypeSuperadmin.svg" alt="Logo" className="logo-superadmin" />
         <input
           type="text"
-          placeholder="Username"
+          placeholder="Email"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
