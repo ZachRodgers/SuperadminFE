@@ -1,163 +1,199 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./Customer.css";
-import lotsData from "../data/Lots.json";
 import Modal from "../components/Modal";
 
-interface Lot {
-  purchaserName: string;
+// Adjust to your actual endpoint base
+const BASE_URL = "http://localhost:8085/ParkingWithParallel/parkinglots";
+
+interface LotData {
+  lotId: string;
   companyName: string;
-  lotName: string;
-  lotID: string;
   address: string;
-  location: string;
-  purchaseDate: string;
-  accountCreated: string;
-  lastActivity: string;
-  passwordChange: string;
-  adminPassword: string;
+  lotName: string;
+  ownerCustomerId: string;
+  lotCapacity: number;
   accountStatus: string;
+  registryOn: boolean;
+  createdOn: string;   // ISO string
+  createdBy: string;
+  modifiedOn: string;  // ISO string
+  modifiedBy: string;
+  isDeleted: boolean;
 }
+
+const CURRENT_SUPERADMIN = "1"; // Or "superadmin" / from context
 
 const Customer: React.FC = () => {
   const { lotId } = useParams<{ lotId: string }>();
   const navigate = useNavigate();
-  const [lot, setLot] = useState<Lot | null>(null);
+
+  // The loaded lot data from DB
+  const [lot, setLot] = useState<LotData | null>(null);
+
+  // Fields we can edit in “Edit” mode
+  const [editableFields, setEditableFields] = useState<Partial<LotData>>({});
   const [editMode, setEditMode] = useState(false);
-  const [editableFields, setEditableFields] = useState<Partial<Lot>>({});
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+
+  // Show/hide “unsaved changes” modal
   const [showModal, setShowModal] = useState(false);
+  // If user tries to navigate away with unsaved changes
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
 
-  useEffect(() => {
-    const foundLot = lotsData.find((item) => item.lotID === lotId);
-    if (foundLot) {
-      setLot(foundLot);
+  // Fetch single lot from DB
+  const fetchLot = async (id: string) => {
+    try {
+      const response = await fetch(`${BASE_URL}/${id}`);
+      if (!response.ok) {
+        console.error("Error fetching lot:", response.status);
+        return;
+      }
+      const data: LotData = await response.json();
+      setLot(data);
+
+      // Initialize editable fields with the DB values
       setEditableFields({
-        purchaserName: foundLot.purchaserName,
-        companyName: foundLot.companyName,
-        lotName: foundLot.lotName,
-        address: foundLot.address,
-        location: foundLot.location,
-        adminPassword: foundLot.adminPassword,
+        companyName: data.companyName,
+        address: data.address,
+        lotName: data.lotName,
+        ownerCustomerId: data.ownerCustomerId,
+        lotCapacity: data.lotCapacity,
       });
+    } catch (error) {
+      console.error("Error fetching lot:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (lotId) {
+      fetchLot(lotId);
     }
   }, [lotId]);
 
-  const handleFieldChange = (field: keyof Lot, value: string) => {
-    setEditableFields((prevFields) => ({
-      ...prevFields,
-      [field]: value,
+  // Called when user modifies an editable field
+  const handleFieldChange = (field: keyof LotData, value: string) => {
+    setEditableFields((prev) => ({
+      ...prev,
+      [field]: field === "lotCapacity" ? Number(value) : value,
     }));
     setUnsavedChanges(true);
   };
 
+  // Toggle “Edit” button
   const toggleEditMode = () => {
     if (editMode && unsavedChanges) {
-      setShowModal(true);
+      setShowModal(true); // Prompt to save/cancel changes
     } else {
       setEditMode(!editMode);
     }
   };
 
-  const saveChangesToServer = async (updatedLots: Lot[]) => {
-    try {
-      const response = await fetch("http://localhost:5000/update-lots", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedLots),
-      });
-
-      if (response.ok) {
-        console.log("Lots.json updated successfully.");
-      } else {
-        console.error("Failed to update Lots.json.");
-      }
-    } catch (error) {
-      console.error("Error updating Lots.json:", error);
-    }
-  };
-
-  const saveChangesToJSON = () => {
-    if (lot) {
-      const updatedLots = lotsData.map((item) =>
-        item.lotID === lotId
-          ? { ...item, ...editableFields }
-          : item
-      );
-
-      saveChangesToServer(updatedLots);
-
-      setLot((prevLot) => ({
-        ...prevLot!,
-        ...editableFields,
-      }));
-      setUnsavedChanges(false);
-      setEditMode(false);
-    }
-  };
-
-  const toggleAccountStatus = async (newStatus: "paused" | "active" | "suspended") => {
+  // Update the DB with the new field values
+  const saveChangesToDB = async () => {
     if (!lot) return;
 
-    const updatedStatus =
-      lot.accountStatus === newStatus ? "active" : newStatus; // Toggle status back to active if already in the state
-
-    const updatedLots = lotsData.map((item) =>
-      item.lotID === lot.lotID ? { ...item, accountStatus: updatedStatus } : item
-    );
+    const updatedLot: LotData = {
+      ...lot,
+      // Overwrite only the editable fields
+      companyName: editableFields.companyName ?? lot.companyName,
+      address: editableFields.address ?? lot.address,
+      lotName: editableFields.lotName ?? lot.lotName,
+      ownerCustomerId: editableFields.ownerCustomerId ?? lot.ownerCustomerId,
+      lotCapacity:
+        editableFields.lotCapacity !== undefined
+          ? editableFields.lotCapacity
+          : lot.lotCapacity,
+      // Force updated “modifiedOn” & “modifiedBy”
+      modifiedOn: new Date().toISOString(),
+      modifiedBy: CURRENT_SUPERADMIN,
+    };
 
     try {
-      const response = await fetch("http://localhost:5000/update-lots", {
+      const response = await fetch(`${BASE_URL}/${lot.lotId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedLots),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedLot),
       });
-
-      if (response.ok) {
-        console.log(`Account status updated to: ${updatedStatus}`);
-        setLot((prevLot) => prevLot && { ...prevLot, accountStatus: updatedStatus });
-      } else {
-        console.error("Failed to update Lots.json.");
+      if (!response.ok) {
+        console.error("Failed to update lot in DB. Status:", response.status);
+        return;
       }
+      // If success, update local state
+      setLot(updatedLot);
+      setUnsavedChanges(false);
+      setEditMode(false);
     } catch (error) {
-      console.error("Error updating Lots.json:", error);
+      console.error("Error updating lot:", error);
     }
   };
 
+  // Called when user clicks “Save” in the unsaved changes modal
   const handleSaveChanges = () => {
-    saveChangesToJSON();
+    saveChangesToDB();
     setShowModal(false);
 
     if (pendingNavigation) {
       navigate(pendingNavigation);
+      setPendingNavigation(null);
     }
-    setPendingNavigation(null);
   };
 
+  // Called when user cancels the unsaved changes
   const handleCancelChanges = () => {
-    setEditableFields({
-      purchaserName: lot?.purchaserName,
-      companyName: lot?.companyName,
-      lotName: lot?.lotName,
-      address: lot?.address,
-      location: lot?.location,
-      adminPassword: lot?.adminPassword,
-    });
+    // Reset fields to original
+    if (lot) {
+      setEditableFields({
+        companyName: lot.companyName,
+        address: lot.address,
+        lotName: lot.lotName,
+        ownerCustomerId: lot.ownerCustomerId,
+        lotCapacity: lot.lotCapacity,
+      });
+    }
     setUnsavedChanges(false);
     setEditMode(false);
     setShowModal(false);
 
     if (pendingNavigation) {
       navigate(pendingNavigation);
+      setPendingNavigation(null);
     }
-    setPendingNavigation(null);
   };
 
+  // Toggle account status between newStatus and “active”
+  const toggleAccountStatus = async (newStatus: "paused" | "suspended") => {
+    if (!lot) return;
+
+    // If the lot’s current status is newStatus, revert to “active”
+    const updatedStatus =
+      lot.accountStatus === newStatus ? "active" : newStatus;
+
+    const updatedLot: LotData = {
+      ...lot,
+      accountStatus: updatedStatus,
+      modifiedOn: new Date().toISOString(),
+      modifiedBy: CURRENT_SUPERADMIN,
+    };
+
+    try {
+      const response = await fetch(`${BASE_URL}/${lot.lotId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedLot),
+      });
+      if (!response.ok) {
+        console.error("Failed to update account status. Status:", response.status);
+        return;
+      }
+      // If success, update local state
+      setLot(updatedLot);
+    } catch (error) {
+      console.error("Error updating account status:", error);
+    }
+  };
+
+  // If user tries to navigate away while editing
   const handleNavigation = (path: string) => {
     if (editMode && unsavedChanges) {
       setShowModal(true);
@@ -176,51 +212,43 @@ const Customer: React.FC = () => {
     );
   }
 
+  // Helper to format date strings
+  const formatDate = (isoDate: string) => {
+    if (!isoDate) return "N/A";
+    const d = new Date(isoDate);
+    return d.toLocaleString(); // Or toLocaleDateString() if you prefer
+  };
+
   return (
     <div className="customer-page">
       <h1>Customer</h1>
+
       <div className="customer-details">
         <div className="customer-column">
-          <p>Purchaser Name:</p>
           <p>Company Name:</p>
           <p>Lot Name:</p>
-          <p>LotID:</p>
+          <p>Lot ID:</p>
           <p>Address:</p>
-          <p>Location:</p>
-          <p>Purchase Date:</p>
-          <p>Account Created:</p>
-          <p>Last Activity:</p>
-          <p>Password Change:</p>
-          <p>Admin Password:</p>
+          <p>Owner Customer ID:</p>
+          <p>Lot Capacity:</p>
+          <p>Created On:</p>
+          <p>Modified On:</p>
         </div>
 
         <div className="customer-column">
+          {/* Company Name (editable) */}
           <p
             contentEditable={editMode}
             suppressContentEditableWarning={true}
             className={editMode ? "editable-highlight" : ""}
             onBlur={(e) =>
-              handleFieldChange(
-                "purchaserName",
-                e.currentTarget.textContent || ""
-              )
+              handleFieldChange("companyName", e.currentTarget.textContent || "")
             }
           >
-            {editableFields.purchaserName || lot.purchaserName}
+            {editableFields.companyName ?? lot.companyName}
           </p>
-          <p
-            contentEditable={editMode}
-            suppressContentEditableWarning={true}
-            className={editMode ? "editable-highlight" : ""}
-            onBlur={(e) =>
-              handleFieldChange(
-                "companyName",
-                e.currentTarget.textContent || ""
-              )
-            }
-          >
-            {editableFields.companyName || lot.companyName}
-          </p>
+
+          {/* Lot Name (editable) */}
           <p
             contentEditable={editMode}
             suppressContentEditableWarning={true}
@@ -229,9 +257,13 @@ const Customer: React.FC = () => {
               handleFieldChange("lotName", e.currentTarget.textContent || "")
             }
           >
-            {editableFields.lotName || lot.lotName}
+            {editableFields.lotName ?? lot.lotName}
           </p>
-          <p className={editMode ? "disabled-text" : ""}>{lot.lotID}</p>
+
+          {/* Lot ID (NOT editable) */}
+          <p className={editMode ? "disabled-text" : ""}>{lot.lotId}</p>
+
+          {/* Address (editable) */}
           <p
             contentEditable={editMode}
             suppressContentEditableWarning={true}
@@ -240,49 +272,55 @@ const Customer: React.FC = () => {
               handleFieldChange("address", e.currentTarget.textContent || "")
             }
           >
-            {editableFields.address || lot.address}
+            {editableFields.address ?? lot.address}
           </p>
+
+          {/* Owner Customer ID (editable) */}
           <p
             contentEditable={editMode}
             suppressContentEditableWarning={true}
             className={editMode ? "editable-highlight" : ""}
             onBlur={(e) =>
-              handleFieldChange("location", e.currentTarget.textContent || "")
+              handleFieldChange("ownerCustomerId", e.currentTarget.textContent || "")
             }
           >
-            {editableFields.location || lot.location}
+            {editableFields.ownerCustomerId ?? lot.ownerCustomerId}
           </p>
-          <p className={editMode ? "disabled-text" : ""}>{lot.purchaseDate}</p>
+
+          {/* Lot Capacity (editable) */}
+          <p
+            contentEditable={editMode}
+            suppressContentEditableWarning={true}
+            className={editMode ? "editable-highlight" : ""}
+            onBlur={(e) =>
+              handleFieldChange("lotCapacity", e.currentTarget.textContent || "")
+            }
+          >
+            {editableFields.lotCapacity ?? lot.lotCapacity}
+          </p>
+
+          {/* Created On (NOT editable) */}
           <p className={editMode ? "disabled-text" : ""}>
-            {lot.accountCreated}
+            {formatDate(lot.createdOn)}
           </p>
-          <p className={editMode ? "disabled-text" : ""}>{lot.lastActivity}</p>
-          <p className={editMode ? "disabled-text" : ""}>{lot.passwordChange}</p>
-          <p
-            contentEditable={editMode}
-            suppressContentEditableWarning={true}
-            className={editMode ? "editable-highlight" : ""}
-            onBlur={(e) =>
-              handleFieldChange(
-                "adminPassword",
-                e.currentTarget.textContent || ""
-              )
-            }
-          >
-            {editableFields.adminPassword || lot.adminPassword}
+
+          {/* Modified On (NOT editable) */}
+          <p className={editMode ? "disabled-text" : ""}>
+            {formatDate(lot.modifiedOn)}
           </p>
         </div>
       </div>
 
-      <h2>Account</h2>
+      <h1>Account</h1>
       <div className="account-actions">
+        {/* Edit button (disabled if suspended) */}
         <button
           className={`action-button ${editMode ? "edit-active" : ""}`}
           onClick={toggleEditMode}
-          disabled={lot?.accountStatus === "suspended"}
+          disabled={lot.accountStatus === "suspended"}
           style={{
-            opacity: lot?.accountStatus === "suspended" ? 0.5 : 1,
-            pointerEvents: lot?.accountStatus === "suspended" ? "none" : "auto",
+            opacity: lot.accountStatus === "suspended" ? 0.5 : 1,
+            pointerEvents: lot.accountStatus === "suspended" ? "none" : "auto",
           }}
         >
           <img
@@ -297,17 +335,19 @@ const Customer: React.FC = () => {
           />
           <span>Edit</span>
         </button>
+
+        {/* Pause button toggles paused/active */}
         <button
           className={`action-button ${
-            lot?.accountStatus === "paused" ? "edit-active" : ""
+            lot.accountStatus === "paused" ? "edit-active" : ""
           }`}
           onClick={() => toggleAccountStatus("paused")}
-          disabled={editMode || lot?.accountStatus === "suspended"}
+          disabled={editMode || lot.accountStatus === "suspended"}
           style={{
             opacity:
-              editMode || lot?.accountStatus === "suspended" ? 0.5 : 1,
+              editMode || lot.accountStatus === "suspended" ? 0.5 : 1,
             pointerEvents:
-              editMode || lot?.accountStatus === "suspended"
+              editMode || lot.accountStatus === "suspended"
                 ? "none"
                 : "auto",
           }}
@@ -315,7 +355,7 @@ const Customer: React.FC = () => {
           <img
             className="button-icon"
             src={
-              lot?.accountStatus === "paused"
+              lot.accountStatus === "paused"
                 ? "/assets/PauseInverted.svg"
                 : "/assets/Pause.svg"
             }
@@ -326,11 +366,13 @@ const Customer: React.FC = () => {
             src="/assets/PauseInverted.svg"
             alt="Pause Icon Hover"
           />
-          <span>{lot?.accountStatus === "paused" ? "Paused" : "Pause"}</span>
+          <span>{lot.accountStatus === "paused" ? "Paused" : "Pause"}</span>
         </button>
+
+        {/* Suspend button toggles suspended/active */}
         <button
           className={`action-button ${
-            lot?.accountStatus === "suspended" ? "edit-active" : ""
+            lot.accountStatus === "suspended" ? "edit-active" : ""
           }`}
           onClick={() => toggleAccountStatus("suspended")}
           style={{
@@ -341,7 +383,7 @@ const Customer: React.FC = () => {
           <img
             className="button-icon"
             src={
-              lot?.accountStatus === "suspended"
+              lot.accountStatus === "suspended"
                 ? "/assets/SuspendInverted.svg"
                 : "/assets/Suspend.svg"
             }
@@ -353,22 +395,25 @@ const Customer: React.FC = () => {
             alt="Suspend Icon Hover"
           />
           <span>
-            {lot?.accountStatus === "suspended" ? "Suspended" : "Suspend"}
+            {lot.accountStatus === "suspended" ? "Suspended" : "Suspend"}
           </span>
         </button>
       </div>
 
+      {/* (Optional) Log section – commented out for now
       <h2>Log</h2>
       <div className="log-section">
         <div className="log-box">
-          <p>Account created on: {lot.accountCreated}</p>
+          <p>Account created on: {formatDate(lot.createdOn)}</p>
         </div>
       </div>
+      */}
 
+      {/* Unsaved changes modal */}
       {showModal && (
         <Modal
           title="Please confirm changes"
-          message="You have made modifications to this customer's profile. Would you like to save changes?"
+          message="You have made modifications to this lot. Would you like to save changes?"
           onConfirm={handleSaveChanges}
           onCancel={handleCancelChanges}
           confirmText="Save Changes"

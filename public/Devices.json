@@ -1,7 +1,0 @@
-{
-  "devices": [
-    "deviceID:0000-0001a;status:Online;temp:32;timestamp:2025-01-17T13:34:00-05:00;networkName:MyInternet;networkPass:password1;networkSpeed:100;plateNumber:AAAA000;confidence:95.4;eventType:entry;vehicleType:car;vehicleColor:red",
-    "deviceID:0000-0001b;status:Offline;temp:10;timestamp:2025-01-01T17:00:00Z;networkName:HomeNetwork;networkPass:pass1234;networkSpeed:50;plateNumber:BBBB111;confidence:88.7;eventType:exit;vehicleType:truck;vehicleColor:blue",
-    "deviceID:0000-4Z26a;status:RecentlyAdded;temp:na;timestamp:2025-01-17T20:09:57.843Z;networkName:na;networkPass:na;networkSpeed:na;plateNumber:na;confidence:na;eventType:na;vehicleType:na;vehicleColor:na"
-  ]
-}
