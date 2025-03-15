@@ -70,23 +70,5 @@
         "amountOwed": "18.75",
         "settingsLink": "google.com",
         "status": "Auto-Paid"
-    },
-    {
-        "lotID": "0000-0002",
-        "plate": "AAAA000",
-        "timestampIn": "2024-01-05T05:47:00-05:00",
-        "timestampOut": "2024-01-05T08:12:00-05:00",
-        "amountOwed": "7.75",
-        "settingsLink": "google.com",
-        "status": "Paid"
-    },
-    {
-        "lotID": "0000-0002",
-        "plate": "ABCD123",
-        "timestampIn": "2024-01-06T14:24:00-05:00",
-        "timestampOut": "2024-01-06T16:43:00-05:00",
-        "amountOwed": "6.25",
-        "settingsLink": "google.com",
-        "status": "Pending"
     }
 ]

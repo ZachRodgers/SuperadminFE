@@ -3,410 +3,376 @@ import { useParams } from 'react-router-dom';
 import './VehicleLog.css';
 import './RefreshBar.css';
 
-interface VehicleEntry {
-    lotID: string;
-    plate: string;
-    timestamp: string;
-    state: string;
-    imagename: string;
-    confidence: string;
+interface AlprData {
+  alprId: string;
+  deviceId: string;
+  plateNumber: string;
+  imageUrl: string;
+  timestamp: string;
+  lotId: string;
+  confidence: number;
+  status: string;
+  vehicleType: string;
+  vehicleMake: string;
+  vehicleModel: string;
+  deviceTemp: number;
+}
+
+interface Device {
+  deviceId: string;
+  lotId: string;
+  // other device fields as needed
 }
 
 interface SortConfig {
-    key: keyof VehicleEntry | 'time' | null;
-    direction: 'ascending' | 'descending';
+  key: keyof AlprData | 'time' | null;
+  direction: 'ascending' | 'descending';
 }
 
-const refreshInterval = 10000; // 10 seconds
+const ALPR_API_URL = 'http://localhost:8085/ParkingWithParallel/alpr';
+const DEVICES_API_URL = 'http://localhost:8085/ParkingWithParallel/devices';
+const refreshInterval = 10000;
 
 const VehicleLog: React.FC = () => {
-    const { lotId } = useParams<{ lotId: string }>();
-    const [filteredVehicles, setFilteredVehicles] = useState<VehicleEntry[]>([]);
-    const [searchQuery, setSearchQuery] = useState<string>('');
-    const [refreshProgress, setRefreshProgress] = useState<number>(0);
-    const [sortConfig, setSortConfig] = useState<SortConfig>({
-        key: 'timestamp', // Default to sorting by Date
-        direction: 'ascending',
+  const { lotId } = useParams<{ lotId: string }>();
+  const [alprEntries, setAlprEntries] = useState<AlprData[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [refreshProgress, setRefreshProgress] = useState(0);
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'timestamp', direction: 'ascending' });
+  const [showModal, setShowModal] = useState(false);
+  const [newEntry, setNewEntry] = useState({ plateNumber: '', timestamp: '', status: 'Enter' });
+
+  // Fetch ALPR data
+  useEffect(() => {
+    if (lotId) {
+      fetchAlprData();
+      fetchDevicesForLot();
+    }
+  }, [lotId]);
+
+  // Refresh bar
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshProgress((prev) => (prev >= 100 ? 0 : prev + 100 / (refreshInterval / 100)));
+      if (refreshProgress >= 100) fetchAlprData();
+    }, 100);
+    return () => clearInterval(interval);
+  }, [refreshProgress]);
+
+  const fetchAlprData = async () => {
+    try {
+      const response = await fetch(ALPR_API_URL);
+      if (!response.ok) throw new Error('Error fetching ALPR data');
+      const data: AlprData[] = await response.json();
+      setAlprEntries(data.filter((item) => item.lotId === lotId));
+      setRefreshProgress(0);
+    } catch (error) {
+      console.error(error);
+      setAlprEntries([]);
+    }
+  };
+
+  // Fetch devices for the current lot, so we can pick earliest device
+  const fetchDevicesForLot = async () => {
+    try {
+      const res = await fetch(DEVICES_API_URL);
+      if (!res.ok) throw new Error('Error fetching devices');
+      const allDevices: Device[] = await res.json();
+      const lotDevices = allDevices.filter((d) => d.lotId === lotId);
+      // Sort by deviceId alphabetically
+      lotDevices.sort((a, b) => a.deviceId.localeCompare(b.deviceId));
+      setDevices(lotDevices);
+    } catch (err) {
+      console.error('Error fetching devices for lot:', err);
+      setDevices([]);
+    }
+  };
+
+  // Basic search
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value.toLowerCase());
+  };
+
+  // Format date/time
+  const parseTimestamp = (ts: string) => {
+    const d = new Date(ts);
+    const date = d.toISOString().split('T')[0];
+    const time = d.toLocaleTimeString('en-US', { hour12: false });
+    return { date, time };
+  };
+
+  // Sorting
+  const filteredResults = alprEntries
+    .filter((entry) => {
+      const norm = `${entry.plateNumber} ${entry.status} ${entry.timestamp} ${entry.confidence}`.toLowerCase();
+      return norm.includes(searchQuery);
+    })
+    .sort((a, b) => {
+      if (!sortConfig.key) return 0;
+      let aVal: string | number = '';
+      let bVal: string | number = '';
+
+      if (sortConfig.key === 'timestamp') {
+        aVal = new Date(a.timestamp).toISOString();
+        bVal = new Date(b.timestamp).toISOString();
+      } else if (sortConfig.key === 'time') {
+        aVal = new Date(a.timestamp).toLocaleTimeString('en-US', { hour12: false });
+        bVal = new Date(b.timestamp).toLocaleTimeString('en-US', { hour12: false });
+      } else {
+        aVal = (a as any)[sortConfig.key];
+        bVal = (b as any)[sortConfig.key];
+      }
+
+      if (sortConfig.direction === 'ascending') return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
     });
 
-    // Modal state for manual ALPR entry
-    const [showModal, setShowModal] = useState(false);
-    const [newEntry, setNewEntry] = useState({
-        plate: '',
-        timestamp: '',
-        state: 'Enter', // default
+  const handleManualRefresh = () => {
+    fetchAlprData();
+    setRefreshProgress(0);
+  };
+
+  // CSV Download
+  const handleDownload = () => {
+    const header = 'PlateNumber,Date,Time,Status,Confidence\n';
+    const rows = filteredResults.map((e) => {
+      const { date, time } = parseTimestamp(e.timestamp);
+      return `${e.plateNumber},${date},${time},${e.status},${e.confidence}`;
     });
+    const blob = new Blob([header + rows.join('\n')], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'VehicleLog.csv';
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
 
-    // Fetch vehicle log from backend
-    useEffect(() => {
-        fetchVehicleLog();
-    }, [lotId]);
+  const handleSort = (key: keyof AlprData | 'time') => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') direction = 'descending';
+    setSortConfig({ key, direction });
+  };
 
-    // Auto-refresh logic
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setRefreshProgress((prev) =>
-                prev >= 100 ? 0 : prev + (100 / (refreshInterval / 100))
-            );
-            if (refreshProgress >= 100) {
-                fetchVehicleLog();
-            }
-        }, 100);
+  // Generate next ALPR ID
+  const computeNextAlprId = (): string => {
+    let maxNum = 0;
+    for (const e of alprEntries) {
+      const match = e.alprId?.match(/(\d+)$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    }
+    const nextNum = (maxNum + 1).toString().padStart(4, '0');
+    return `ALPR-${nextNum}`;
+  };
 
-        return () => clearInterval(interval);
-    }, [refreshProgress]);
+  const handleAddEntry = async () => {
+    const { plateNumber, timestamp, status } = newEntry;
+    if (!plateNumber) {
+      alert('Please fill Plate Number');
+      return;
+    }
+    // If no time, use now
+    const finalTimestamp = timestamp ? timestamp : new Date().toISOString();
+    // Pick earliest device or fallback
+    const chosenDeviceId = devices.length > 0 ? devices[0].deviceId : 'UNKNOWN-DEVICE';
+    const nextId = computeNextAlprId();
 
-    // Load log and filter by lot
-    const fetchVehicleLog = async () => {
-        try {
-            const response = await fetch('http://localhost:5000/vehicle-log');
-            if (!response.ok) {
-                throw new Error('Error fetching vehicle log');
-            }
-            const data: VehicleEntry[] = await response.json();
-            const lotVehicles = data.filter((entry) => entry.lotID === lotId);
+    try {
+      const response = await fetch(ALPR_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          alprId: nextId,
+          deviceId: chosenDeviceId,
+          plateNumber,
+          imageUrl: '',
+          timestamp: finalTimestamp,
+          lotId,
+          confidence: 101,
+          status,
+          vehicleType: '',
+          vehicleMake: '',
+          vehicleModel: '',
+          deviceTemp: 0,
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to add entry');
+      fetchAlprData();
+      setShowModal(false);
+      setNewEntry({ plateNumber: '', timestamp: '', status: 'Enter' });
+    } catch (error) {
+      console.error(error);
+      alert('Error adding entry');
+    }
+  };
 
-            // Provide default '0' confidence if missing
-            setFilteredVehicles(
-                lotVehicles.map((entry) => ({
-                    ...entry,
-                    confidence: entry.confidence ?? '0',
-                }))
-            );
-            setRefreshProgress(0);
-        } catch (error) {
-            console.error(error);
-            setFilteredVehicles([]);
-        }
-    };
-
-    // Search handler
-    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchQuery(e.target.value.toLowerCase());
-    };
-
-    // Filter + sort
-    const filteredResults = filteredVehicles
-        .filter((entry) => {
-            const normalizedData = `${entry.plate} ${entry.state} ${entry.timestamp} ${entry.confidence}`.toLowerCase();
-            return normalizedData.includes(searchQuery);
-        })
-        .sort((a, b) => {
-            if (!sortConfig.key) return 0;
-            let aVal: string | number = '';
-            let bVal: string | number = '';
-
-            if (sortConfig.key === 'timestamp') {
-                // Compare dates (YYYY-MM-DD)
-                aVal = new Date(a.timestamp).toISOString().split('T')[0];
-                bVal = new Date(b.timestamp).toISOString().split('T')[0];
-            } else if (sortConfig.key === 'time') {
-                // Compare times (HH:MM:SS)
-                aVal = new Date(a.timestamp).toLocaleTimeString('en-US', { hour12: false });
-                bVal = new Date(b.timestamp).toLocaleTimeString('en-US', { hour12: false });
-            } else if (sortConfig.key === 'confidence') {
-                aVal = parseFloat(a.confidence);
-                bVal = parseFloat(b.confidence);
-            } else {
-                aVal = (a as any)[sortConfig.key];
-                bVal = (b as any)[sortConfig.key];
-            }
-
-            if (sortConfig.direction === 'ascending') {
-                return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-            } else {
-                return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
-            }
-        });
-
-    // Parse timestamp into separate date/time
-    const parseTimestamp = (timestamp: string) => {
-        const localDate = new Date(timestamp);
-        const date = localDate.toISOString().split('T')[0];
-        const time = localDate.toLocaleTimeString('en-US', {
-            hour12: false,
-            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        });
-        return { date, time };
-    };
-
-    // Manual refresh
-    const handleManualRefresh = () => {
-        fetchVehicleLog();
-    };
-
-    // Download CSV
-    const handleDownload = () => {
-        const csvHeader = 'Plate,Date,Time,State,Confidence\n';
-        const csvRows = filteredResults.map((entry) => {
-            const { date, time } = parseTimestamp(entry.timestamp);
-            return `${entry.plate},${date},${time},${entry.state},${entry.confidence}`;
-        });
-        const csvContent = csvHeader + csvRows.join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'VehicleLog.csv';
-        link.click();
-        window.URL.revokeObjectURL(url);
-    };
-
-    // Toggle sort
-    const handleSort = (key: keyof VehicleEntry | 'time') => {
-        let direction: 'ascending' | 'descending' = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    // Submit new manual entry (confidence => 101)
-    const handleAddEntry = async () => {
-        const { plate, timestamp, state } = newEntry;
-
-        if (!plate || !timestamp) {
-            alert('Please fill all required fields');
-            return;
-        }
-
-        try {
-            const response = await fetch('http://localhost:5000/vehicle-log', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    lotID: lotId,
-                    plate,
-                    timestamp,
-                    state,
-                    imagename: 'placeholder',
-                    confidence: '101', // always 101% for manual
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to add entry');
-            }
-
-            // Refresh table data
-            fetchVehicleLog();
-            // Close modal, reset fields
-            setShowModal(false);
-            setNewEntry({ plate: '', timestamp: '', state: 'Enter' });
-        } catch (error) {
-            console.error(error);
-            alert('Error adding entry');
-        }
-    };
-
-    return (
-        <div className="vehicle-log">
-            <div className="refresh-bar-wrapper">
-                <div className="refresh-bar">
-                    <div
-                        className="refresh-bar-fill"
-                        style={{ width: `${refreshProgress}%` }}
-                    ></div>
-                </div>
-                <div className="refresh-text" onClick={handleManualRefresh}>
-                    {refreshProgress < 100 ? 'Refreshing...' : 'Manual Refresh'}
-                </div>
-            </div>
-
-            <h1>Vehicle Log</h1>
-
-            {/* Search bar + two buttons side by side */}
-            <div className="search-and-download">
-                <div className="search-bar">
-                    <img src="/assets/SearchBarIcon.svg" alt="Search" />
-                    <input
-                        type="text"
-                        placeholder="Search Plate, Date, State, Time or Confidence"
-                        value={searchQuery}
-                        onChange={handleSearch}
-                    />
-                </div>
-
-                <button className="download-button" onClick={handleDownload}>
-                    Download as Sheet
-                </button>
-
-                {/* New “Add Manual Entry” button */}
-                <button
-                    className="download-button"
-                    onClick={() => setShowModal(true)}
-                    style={{ marginRight: '0' }}
-                >
-                    Add Manual Entry
-                </button>
-            </div>
-
-            <table className="vehicle-log-table">
-                <thead>
-                    <tr>
-                        <th onClick={() => handleSort('plate')} className="sortable-column">
-                            Plate
-                            <img
-                                src={
-                                    sortConfig.key === 'plate'
-                                        ? '/assets/FilterArrowSelected.svg'
-                                        : '/assets/FilterArrow.svg'
-                                }
-                                alt="Sort Arrow"
-                                className={
-                                    sortConfig.key === 'plate' &&
-                                    sortConfig.direction === 'descending'
-                                        ? 'sort-arrow descending'
-                                        : 'sort-arrow'
-                                }
-                            />
-                        </th>
-                        <th onClick={() => handleSort('timestamp')} className="sortable-column">
-                            Date
-                            <img
-                                src={
-                                    sortConfig.key === 'timestamp'
-                                        ? '/assets/FilterArrowSelected.svg'
-                                        : '/assets/FilterArrow.svg'
-                                }
-                                alt="Sort Arrow"
-                                className={
-                                    sortConfig.key === 'timestamp' &&
-                                    sortConfig.direction === 'descending'
-                                        ? 'sort-arrow descending'
-                                        : 'sort-arrow'
-                                }
-                            />
-                        </th>
-                        <th onClick={() => handleSort('time')} className="sortable-column">
-                            Time
-                            <img
-                                src={
-                                    sortConfig.key === 'time'
-                                        ? '/assets/FilterArrowSelected.svg'
-                                        : '/assets/FilterArrow.svg'
-                                }
-                                alt="Sort Arrow"
-                                className={
-                                    sortConfig.key === 'time' &&
-                                    sortConfig.direction === 'descending'
-                                        ? 'sort-arrow descending'
-                                        : 'sort-arrow'
-                                }
-                            />
-                        </th>
-                        <th onClick={() => handleSort('state')} className="sortable-column">
-                            State
-                            <img
-                                src={
-                                    sortConfig.key === 'state'
-                                        ? '/assets/FilterArrowSelected.svg'
-                                        : '/assets/FilterArrow.svg'
-                                }
-                                alt="Sort Arrow"
-                                className={
-                                    sortConfig.key === 'state' &&
-                                    sortConfig.direction === 'descending'
-                                        ? 'sort-arrow descending'
-                                        : 'sort-arrow'
-                                }
-                            />
-                        </th>
-                        <th onClick={() => handleSort('confidence')} className="sortable-column">
-                            Confidence
-                            <img
-                                src={
-                                    sortConfig.key === 'confidence'
-                                        ? '/assets/FilterArrowSelected.svg'
-                                        : '/assets/FilterArrow.svg'
-                                }
-                                alt="Sort Arrow"
-                                className={
-                                    sortConfig.key === 'confidence' &&
-                                    sortConfig.direction === 'descending'
-                                        ? 'sort-arrow descending'
-                                        : 'sort-arrow'
-                                }
-                            />
-                        </th>
-                        <th>Image</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredResults.map((entry, index) => {
-                        const { date, time } = parseTimestamp(entry.timestamp);
-                        return (
-                            <tr
-                                key={index}
-                                style={{ backgroundColor: index % 2 === 0 ? '#363941' : '#2B2E35' }}
-                            >
-                                <td>{entry.plate}</td>
-                                <td>{date}</td>
-                                <td>{time}</td>
-                                <td>{entry.state}</td>
-                                <td>{entry.confidence}%</td>
-                                <td>
-                                    <img
-                                        src={
-                                            entry.imagename === 'placeholder'
-                                                ? '/assets/PlatePlaceholder.jpg'
-                                                : `/assets/${entry.imagename}.jpg`
-                                        }
-                                        alt="Vehicle Placeholder"
-                                        className="vehicle-placeholder"
-                                    />
-                                </td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
-
-            {/* Modal for manual entry */}
-            {showModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
-                        <h2>Add Manual Entry</h2>
-
-                        <label>Plate Number:</label>
-                        <input
-                            type="text"
-                            value={newEntry.plate}
-                            onChange={(e) => setNewEntry({ ...newEntry, plate: e.target.value })}
-                        />
-
-                        <label>Date/Time:</label>
-                        <input
-                            type="datetime-local"
-                            value={newEntry.timestamp}
-                            onChange={(e) =>
-                                setNewEntry({ ...newEntry, timestamp: e.target.value })
-                            }
-                        />
-
-                        <label>State:</label>
-                        <select
-                            value={newEntry.state}
-                            onChange={(e) => setNewEntry({ ...newEntry, state: e.target.value })}
-                        >
-                            <option value="Enter">Enter</option>
-                            <option value="Exit">Exit</option>
-                        </select>
-
-                        <div className="button-group">
-                            <button className="submit-button" onClick={handleAddEntry}>
-                                Submit
-                            </button>
-                            <button className="cancel-button" onClick={() => setShowModal(false)}>
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+  return (
+    <div className="vehicle-log">
+      <div className="refresh-bar-wrapper">
+        <div className="refresh-bar">
+          <div className="refresh-bar-fill" style={{ width: `${refreshProgress}%` }}></div>
         </div>
-    );
+        <div className="refresh-text" onClick={handleManualRefresh}>
+          {refreshProgress < 100 ? 'Refreshing...' : 'Manual Refresh'}
+        </div>
+      </div>
+
+      <h1>Vehicle Log</h1>
+
+      <div className="search-and-download">
+        <div className="search-bar">
+          <img src="/assets/SearchBarIcon.svg" alt="Search" />
+          <input
+            type="text"
+            placeholder="Search Plate, Date, State, Time or Confidence"
+            value={searchQuery}
+            onChange={handleSearch}
+          />
+        </div>
+
+        <button className="download-button" onClick={handleDownload}>
+          Download as Sheet
+        </button>
+
+        <button className="download-button" onClick={() => setShowModal(true)} style={{ marginRight: '0' }}>
+          Add Manual Entry
+        </button>
+      </div>
+
+      <table className="vehicle-log-table">
+        <thead>
+          <tr>
+            <th onClick={() => handleSort('plateNumber')} className="sortable-column">
+              Plate
+              <img
+                src={sortConfig.key === 'plateNumber' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                alt="Sort Arrow"
+                className={
+                  sortConfig.key === 'plateNumber' && sortConfig.direction === 'descending'
+                    ? 'sort-arrow descending'
+                    : 'sort-arrow'
+                }
+              />
+            </th>
+            <th onClick={() => handleSort('timestamp')} className="sortable-column">
+              Date
+              <img
+                src={sortConfig.key === 'timestamp' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                alt="Sort Arrow"
+                className={
+                  sortConfig.key === 'timestamp' && sortConfig.direction === 'descending'
+                    ? 'sort-arrow descending'
+                    : 'sort-arrow'
+                }
+              />
+            </th>
+            <th onClick={() => handleSort('time')} className="sortable-column">
+              Time
+              <img
+                src={sortConfig.key === 'time' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                alt="Sort Arrow"
+                className={
+                  sortConfig.key === 'time' && sortConfig.direction === 'descending'
+                    ? 'sort-arrow descending'
+                    : 'sort-arrow'
+                }
+              />
+            </th>
+            <th onClick={() => handleSort('status')} className="sortable-column">
+              State
+              <img
+                src={sortConfig.key === 'status' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                alt="Sort Arrow"
+                className={
+                  sortConfig.key === 'status' && sortConfig.direction === 'descending'
+                    ? 'sort-arrow descending'
+                    : 'sort-arrow'
+                }
+              />
+            </th>
+            <th onClick={() => handleSort('confidence')} className="sortable-column">
+              Confidence
+              <img
+                src={sortConfig.key === 'confidence' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                alt="Sort Arrow"
+                className={
+                  sortConfig.key === 'confidence' && sortConfig.direction === 'descending'
+                    ? 'sort-arrow descending'
+                    : 'sort-arrow'
+                }
+              />
+            </th>
+            <th>Image</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredResults.map((entry, index) => {
+            const { date, time } = parseTimestamp(entry.timestamp);
+            return (
+              <tr key={entry.alprId || index} style={{ backgroundColor: index % 2 === 0 ? '#363941' : '#2B2E35' }}>
+                <td>{entry.plateNumber}</td>
+                <td>{date}</td>
+                <td>{time}</td>
+                <td>{entry.status}</td>
+                <td>{entry.confidence}%</td>
+                <td>
+                  <img
+                    src={entry.imageUrl ? entry.imageUrl : '/assets/PlatePlaceholder.jpg'}
+                    alt="Vehicle Placeholder"
+                    className="vehicle-placeholder"
+                  />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Add Manual Entry</h2>
+
+            <label>Plate Number:</label>
+            <input
+              type="text"
+              value={newEntry.plateNumber}
+              onChange={(e) => setNewEntry({ ...newEntry, plateNumber: e.target.value })}
+            />
+
+            <label>Date/Time:</label>
+            <input
+              type="datetime-local"
+              value={newEntry.timestamp}
+              onChange={(e) => setNewEntry({ ...newEntry, timestamp: e.target.value })}
+            />
+
+            <label>State:</label>
+            <select
+              value={newEntry.status}
+              onChange={(e) => setNewEntry({ ...newEntry, status: e.target.value })}
+            >
+              <option value="Enter">Enter</option>
+              <option value="Exit">Exit</option>
+            </select>
+
+            <div className="button-group">
+              <button className="submit-button" onClick={handleAddEntry}>
+                Submit
+              </button>
+              <button className="cancel-button" onClick={() => setShowModal(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default VehicleLog;
