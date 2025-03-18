@@ -9,19 +9,26 @@ const Login: React.FC = () => {
 
   const handleLogin = async () => {
     try {
+      // This calls our Spring Boot /login endpoint
       const response = await axios.post('http://localhost:8085/ParkingWithParallel/login', {
         email: username,
         password: password
       });
-      const token = response.data.token;
+
+      // We expect { "token": "...", "userId": "..." }
+      const { token, userId } = response.data;
+
+      // Store them in localStorage
       localStorage.setItem('token', token);
+      localStorage.setItem('userId', userId);
       localStorage.setItem('isAuthenticated', 'true');
+
+      // Redirect, for example to /dashboard
       window.location.href = '/dashboard';
     } catch (err) {
       setError('Invalid credentials');
     }
   };
-  
 
   return (
     <div className="login-container">
