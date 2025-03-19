@@ -58,16 +58,11 @@ const Dashboard: React.FC = () => {
 
   // Helper function to format lot IDs for display
   const formatLotId = (lotId: string): string => {
-    // Remove the prefix "PWP-PL-" if it exists
-    let id = lotId;
     const prefix = "PWP-PL-";
-    if (id.startsWith(prefix)) {
-      id = id.substring(prefix.length);
+    if (lotId.startsWith(prefix)) {
+      return lotId.substring(prefix.length);
     }
-    // Ensure the remaining string is 8 digits (pad with leading zeros if needed)
-    const padded = id.padStart(8, '0');
-    // Split into two groups of 4 digits with a dash in between
-    return padded.substring(0, 4) + '-' + padded.substring(4);
+    return lotId;
   };
 
   // Fetch lots from Spring Boot

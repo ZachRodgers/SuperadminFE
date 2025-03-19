@@ -7,27 +7,13 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const { lotId } = useParams<{ lotId: string }>(); // get lotId from URL
 
-  // Format the lot ID by:
-  // 1) Removing the prefix "PWP-PL-" if present.
-  // 2) Zero-padding the numeric part to 8 digits if shorter.
-  // 3) Splitting into two groups of 4 digits with a dash.
+  // Format the lot ID by removing the prefix "PWP-PL-" if present
   const formatLotId = (rawId: string): string => {
     const prefix = "PWP-PL-";
-    let numericPart = rawId;
-
-    // 1) Remove prefix if it exists
-    if (numericPart.startsWith(prefix)) {
-      numericPart = numericPart.substring(prefix.length);
+    if (rawId.startsWith(prefix)) {
+      return rawId.substring(prefix.length);
     }
-
-    // 2) Pad to 8 digits if needed
-    if (numericPart.length < 8) {
-      numericPart = numericPart.padStart(8, '0');
-    }
-
-    // 3) Insert dash between the first 4 and next 4
-    //    (assuming numericPart is at least 8 chars now)
-    return numericPart.slice(0, 4) + '-' + numericPart.slice(4, 8);
+    return rawId;
   };
 
   // Determine active page

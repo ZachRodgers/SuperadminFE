@@ -77,6 +77,24 @@ const DeviceManager: React.FC = () => {
     return () => clearInterval(timer);
   }, [progress]);
 
+  // Format lot ID by removing the prefix if present
+  const formatLotId = (lotId: string): string => {
+    const prefix = "PWP-PL-";
+    if (lotId.startsWith(prefix)) {
+      return lotId.substring(prefix.length);
+    }
+    return lotId;
+  };
+
+  // Format device ID by removing the prefix if present
+  const formatDeviceId = (deviceId: string): string => {
+    const prefix = "PWP-D-";
+    if (deviceId.startsWith(prefix)) {
+      return deviceId.substring(prefix.length);
+    }
+    return deviceId;
+  };
+
   // GET /devices => filter by lotId
   const fetchDevices = async () => {
     if (!lotId) return; // if no lotId in the URL, skip
@@ -87,7 +105,7 @@ const DeviceManager: React.FC = () => {
         return;
       }
       const allDevices: Device[] = await response.json();
-      // Filter devices for this lot
+      // Filter devices for this lot using the original lotId (with prefix)
       const lotDevices = allDevices.filter(d => d.lotId === lotId);
       setDevices(lotDevices);
       calculateNextDeviceId(lotDevices);
@@ -102,9 +120,12 @@ const DeviceManager: React.FC = () => {
       setNextDeviceId(null);
       return;
     }
-    const existingIds = lotDevices.map(d => d.deviceId);
+    // Get existing IDs without their prefixes for comparison
+    const existingIds = lotDevices.map(d => formatDeviceId(d.deviceId));
+    // Use the formatted lot ID (without prefix) for the next device ID
+    const formattedLotId = formatLotId(lotId);
     for (let i = 0; i < ALPHABET.length; i++) {
-      const candidate = `${lotId}${ALPHABET[i]}`;
+      const candidate = `${formattedLotId}${ALPHABET[i]}`;
       if (!existingIds.includes(candidate)) {
         setNextDeviceId(candidate);
         return;
@@ -127,9 +148,11 @@ const DeviceManager: React.FC = () => {
       return;
     }
     const now = new Date().toISOString();
+    // Add back the prefix for the backend
+    const deviceIdWithPrefix = `PWP-D-${nextDeviceId}`;
     const newDevice: Device = {
-      deviceId: nextDeviceId,
-      lotId: lotId,
+      deviceId: deviceIdWithPrefix,
+      lotId: lotId,  // lotId already has the prefix from the URL
       deviceType: 'ALPR',
       isWifiRegistered: false,
       wifiNetworkName: 'N/A',
@@ -163,7 +186,9 @@ const DeviceManager: React.FC = () => {
   // DELETE /devices/{id}
   const handleRemoveDevice = async (deviceId: string) => {
     try {
-      const resp = await fetch(`${DEVICES_API_URL}/${deviceId}`, { method: 'DELETE' });
+      // Add back the prefix for the backend
+      const deviceIdWithPrefix = `PWP-D-${deviceId}`;
+      const resp = await fetch(`${DEVICES_API_URL}/${deviceIdWithPrefix}`, { method: 'DELETE' });
       if (!resp.ok) {
         console.error('Failed to remove device:', await resp.text());
       } else {
@@ -251,12 +276,12 @@ const DeviceManager: React.FC = () => {
     }
 
     return {
-      id: deviceId,
+      id: formatDeviceId(deviceId),
       statusText,
       updatedText,
-      network: wifiNetworkName || 'N/A',
+      network: wifiNetworkName,
       isOnline: deviceStatus === 'Online',
-      colorClass,
+      colorClass
     };
   };
 
