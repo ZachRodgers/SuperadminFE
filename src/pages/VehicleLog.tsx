@@ -20,8 +20,11 @@ interface AlprData {
 
 interface Device {
   deviceId: string;
-  lotId: string;
-  // other device fields as needed
+  lot: {
+    lotId: string;
+  };
+  deviceType: string;
+  deviceStatus: string;
 }
 
 interface SortConfig {
@@ -42,6 +45,7 @@ const VehicleLog: React.FC = () => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'timestamp', direction: 'ascending' });
   const [showModal, setShowModal] = useState(false);
   const [newEntry, setNewEntry] = useState({ plateNumber: '', timestamp: '', status: 'Enter' });
+  const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
 
   // Fetch ALPR data
   useEffect(() => {
@@ -62,10 +66,14 @@ const VehicleLog: React.FC = () => {
 
   const fetchAlprData = async () => {
     try {
-      const response = await fetch(ALPR_API_URL);
+      const response = await fetch(`${ALPR_API_URL}/get-alpr-by-lot-id/${lotId}`);
       if (!response.ok) throw new Error('Error fetching ALPR data');
       const data: AlprData[] = await response.json();
-      setAlprEntries(data.filter((item) => item.lotId === lotId));
+      // Sort by timestamp (newest first)
+      const sortedEntries = data.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      setAlprEntries(sortedEntries);
       setRefreshProgress(0);
     } catch (error) {
       console.error(error);
@@ -73,13 +81,12 @@ const VehicleLog: React.FC = () => {
     }
   };
 
-  // Fetch devices for the current lot, so we can pick earliest device
+  // Fetch devices for the current lot
   const fetchDevicesForLot = async () => {
     try {
-      const res = await fetch(DEVICES_API_URL);
-      if (!res.ok) throw new Error('Error fetching devices');
-      const allDevices: Device[] = await res.json();
-      const lotDevices = allDevices.filter((d) => d.lotId === lotId);
+      const response = await fetch(`${DEVICES_API_URL}/get-by-lot/${lotId}`);
+      if (!response.ok) throw new Error('Error fetching devices');
+      const lotDevices: Device[] = await response.json();
       // Sort by deviceId alphabetically
       lotDevices.sort((a, b) => a.deviceId.localeCompare(b.deviceId));
       setDevices(lotDevices);
@@ -165,8 +172,8 @@ const VehicleLog: React.FC = () => {
         if (num > maxNum) maxNum = num;
       }
     }
-    const nextNum = (maxNum + 1).toString().padStart(4, '0');
-    return `ALPR-${nextNum}`;
+    const nextNum = (maxNum + 1).toString().padStart(6, '0');
+    return `PWP-ALPR-${nextNum}`;
   };
 
   const handleAddEntry = async () => {
@@ -175,38 +182,90 @@ const VehicleLog: React.FC = () => {
       alert('Please fill Plate Number');
       return;
     }
+
     // If no time, use now
-    const finalTimestamp = timestamp ? timestamp : new Date().toISOString();
-    // Pick earliest device or fallback
-    const chosenDeviceId = devices.length > 0 ? devices[0].deviceId : 'UNKNOWN-DEVICE';
+    const now = new Date();
+    // Format the date to include timezone offset
+    const finalTimestamp = timestamp 
+      ? new Date(timestamp).toISOString()
+      : now.toISOString();
+    
+    // Get the first available device for this lot
+    const chosenDevice = devices.find(d => d.lot.lotId === lotId);
+    if (!chosenDevice) {
+      alert('No devices available for this lot. Please add a device first.');
+      return;
+    }
+
     const nextId = computeNextAlprId();
 
     try {
-      const response = await fetch(ALPR_API_URL, {
+      const response = await fetch(`${ALPR_API_URL}/create-alpr`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           alprId: nextId,
-          deviceId: chosenDeviceId,
+          device: {
+            deviceId: chosenDevice.deviceId
+          },
+          lot: {
+            lotId: lotId
+          },
           plateNumber,
           imageUrl: '',
           timestamp: finalTimestamp,
-          lotId,
           confidence: 101,
           status,
-          vehicleType: '',
+          vehicleType: 'manualentry',
           vehicleMake: '',
           vehicleModel: '',
           deviceTemp: 0,
         }),
       });
-      if (!response.ok) throw new Error('Failed to add entry');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.message?.includes('DEVICE00002')) {
+          alert('Device not found. Please try again or contact support.');
+        } else if (errorData.message?.includes('LOT00001')) {
+          alert('Lot not found. Please try again or contact support.');
+        } else {
+          alert('Error adding entry: ' + errorData.message);
+        }
+        return;
+      }
+      
       fetchAlprData();
       setShowModal(false);
       setNewEntry({ plateNumber: '', timestamp: '', status: 'Enter' });
     } catch (error) {
       console.error(error);
-      alert('Error adding entry');
+      alert('Error adding entry. Please try again or contact support.');
+    }
+  };
+
+  const handleClearAll = async () => {
+    try {
+      const response = await fetch(`${ALPR_API_URL}/delete-all-by-lot/${lotId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.message?.includes('LOT00001')) {
+          alert('Lot not found. Please try again or contact support.');
+        } else {
+          alert('Failed to clear ALPR data: ' + errorData.message);
+        }
+        return;
+      }
+
+      // Refresh the data after clearing
+      fetchAlprData();
+      setShowClearConfirmModal(false);
+    } catch (error) {
+      console.error('Error clearing ALPR data:', error);
+      alert('Failed to clear ALPR data. Please try again or contact support.');
     }
   };
 
@@ -332,6 +391,12 @@ const VehicleLog: React.FC = () => {
         </tbody>
       </table>
 
+      <div className="clear-all-container">
+        <button className="clear-all-button" onClick={() => setShowClearConfirmModal(true)}>
+          Clear All
+        </button>
+      </div>
+
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -362,9 +427,27 @@ const VehicleLog: React.FC = () => {
 
             <div className="button-group">
               <button className="submit-button" onClick={handleAddEntry}>
-                Submit
+                {newEntry.timestamp ? 'Send' : 'Send (Current Time)'}
               </button>
               <button className="cancel-button" onClick={() => setShowModal(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showClearConfirmModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Clear All ALPR Data</h2>
+            <p>Are you sure you want to delete all ALPR data for this lot? This action cannot be undone.</p>
+            
+            <div className="button-group">
+              <button className="submit-button" onClick={handleClearAll}>
+                Clear All
+              </button>
+              <button className="cancel-button" onClick={() => setShowClearConfirmModal(false)}>
                 Cancel
               </button>
             </div>

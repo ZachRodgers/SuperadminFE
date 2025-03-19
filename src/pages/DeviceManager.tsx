@@ -311,7 +311,9 @@ const DeviceManager: React.FC = () => {
       <h1>Device Manager</h1>
 
       <div className="device-list">
-        {devices.map((device, idx) => {
+        {devices
+          .sort((a, b) => formatDeviceId(a.deviceId).localeCompare(formatDeviceId(b.deviceId)))
+          .map((device, idx) => {
           const parsed = parseDevice(device);
           return (
             <div

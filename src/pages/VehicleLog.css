@@ -177,3 +177,27 @@
 .cancel-button {
     background-color: #363941;
 }
+
+.clear-all-container {
+    margin-top: 20px;
+    padding-left: 20px;
+}
+
+.clear-all-button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 5px 0;
+    transition: color 0.2s ease;
+}
+
+.clear-all-button:hover {
+    color: rgba(255, 255, 255, 1);
+    text-decoration: underline;
+}
+
+.clear-all-button:active {
+    color: rgba(255, 255, 255, 0.9);
+}

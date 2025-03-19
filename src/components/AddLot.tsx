@@ -18,15 +18,15 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
   const computeNextLotId = () => {
     let maxNum = 0;
     existingLots.forEach((lot) => {
-      // e.g. lot.lotID might be "0000-0002"
+      // e.g. lot.lotID might be "PWP-PL-0000003"
       const match = lot.lotID.match(/(\d+)$/);
       if (match) {
         const num = parseInt(match[1], 10);
         if (num > maxNum) maxNum = num;
       }
     });
-    const nextNum = (maxNum + 1).toString().padStart(4, '0');
-    return `0000-${nextNum}`;
+    const nextNum = (maxNum + 1).toString().padStart(6, '0'); // Pad to 6 digits to match DB format
+    return nextNum; // Return just the number without any dashes
   };
 
   // 2) Lot data state.
@@ -36,7 +36,7 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
     companyName: '',
     address: '',
     lotName: 'New Parking Lot',
-    ownerEmail: currentUserEmail, // user enters the owner’s email here
+    ownerEmail: currentUserEmail,
     lotCapacity: 0,
     accountStatus: 'Active',
     registryOn: false,
@@ -144,15 +144,7 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h2>Add New Lot</h2>
-
-        <label>Lot ID:</label>
-        <input
-          type="text"
-          value={lotData.lotId}
-          onChange={(e) => setLotData({ ...lotData, lotId: e.target.value })}
-          placeholder='Enter a new valid LotID'
-        />
+        <h2>Add Lot {lotData.lotId}</h2>
 
         <label>Company Name:</label>
         <input

@@ -18,18 +18,20 @@ interface Lot {
 
 interface Device {
   deviceId: string;
-  lotId: string;
+  lot: {
+    lotId: string;
+  };
   deviceType: string;
   isWifiRegistered: boolean;
   wifiNetworkName: string;
   wifiPassword: string;
-  deviceStatus: string;
+  deviceStatus: string;   // e.g. "Online", "Offline", "RecentlyAdded", "Calibrating"
   lastActive: string;
   deviceTemp: number;
-  createdOn: string;
-  createdBy: string;
-  modifiedOn: string;
-  modifiedBy: string;
+  createdOn: string | null;
+  createdBy: string | null;
+  modifiedOn: string | null;
+  modifiedBy: string | null;
   isDeleted: boolean;
 }
 
@@ -92,7 +94,7 @@ const Dashboard: React.FC = () => {
   // Fetch devices from Spring Boot
   const fetchDevices = async () => {
     try {
-      const response = await fetch(DEVICES_API_URL);
+      const response = await fetch(`${DEVICES_API_URL}/get-all`);
       if (!response.ok) {
         console.error('HTTP error', response.status);
         return;
@@ -115,7 +117,7 @@ const Dashboard: React.FC = () => {
   };
 
   const calculateDeviceStatus = (lotID: string): DeviceStatusCounts => {
-    const relevantDevices = devices.filter((device) => device.lotId === lotID);
+    const relevantDevices = devices.filter((device) => device.lot.lotId === lotID);
     const onlineCount = relevantDevices.filter((d) => d.deviceStatus === 'Online').length;
     const calibratingCount = relevantDevices.filter((d) => d.deviceStatus === 'Calibrating').length;
     const offlineCount = relevantDevices.filter((d) =>
