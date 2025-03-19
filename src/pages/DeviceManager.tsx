@@ -6,6 +6,9 @@ import './RefreshBar.css';
 
 // Points to your new device endpoints (DevicesController).
 const DEVICES_API_URL = 'http://localhost:8085/ParkingWithParallel/devices';
+const DEVICES_BY_LOT_URL = `${DEVICES_API_URL}/get-by-lot`;
+const DEVICES_CREATE_URL = `${DEVICES_API_URL}/create`;
+const DEVICES_DELETE_URL = `${DEVICES_API_URL}/permanent-delete`;
 
 // Refresh bar constants
 const REFRESH_INTERVAL_MS = 10000; // 10 seconds for full auto-refresh
@@ -15,7 +18,9 @@ const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 // Matches your /devices schema from Swagger
 interface Device {
   deviceId: string;
-  lotId: string;
+  lot: {
+    lotId: string;
+  };
   deviceType: string;
   isWifiRegistered: boolean;
   wifiNetworkName: string;
@@ -99,16 +104,15 @@ const DeviceManager: React.FC = () => {
   const fetchDevices = async () => {
     if (!lotId) return; // if no lotId in the URL, skip
     try {
-      const response = await fetch(DEVICES_API_URL);
+      // Use the get-by-lot endpoint with the lot ID
+      const response = await fetch(`${DEVICES_BY_LOT_URL}/${lotId}`);
       if (!response.ok) {
         console.error('Failed to fetch devices. Status:', response.status);
         return;
       }
-      const allDevices: Device[] = await response.json();
-      // Filter devices for this lot using the original lotId (with prefix)
-      const lotDevices = allDevices.filter(d => d.lotId === lotId);
-      setDevices(lotDevices);
-      calculateNextDeviceId(lotDevices);
+      const devices: Device[] = await response.json();
+      setDevices(devices);
+      calculateNextDeviceId(devices);
     } catch (error) {
       console.error('Error fetching devices:', error);
     }
@@ -152,7 +156,9 @@ const DeviceManager: React.FC = () => {
     const deviceIdWithPrefix = `PWP-D-${nextDeviceId}`;
     const newDevice: Device = {
       deviceId: deviceIdWithPrefix,
-      lotId: lotId,  // lotId already has the prefix from the URL
+      lot: {  // Send the lot object instead of just lotId
+        lotId: lotId
+      },
       deviceType: 'ALPR',
       isWifiRegistered: false,
       wifiNetworkName: 'N/A',
@@ -167,13 +173,14 @@ const DeviceManager: React.FC = () => {
       isDeleted: false
     };
     try {
-      const resp = await fetch(DEVICES_API_URL, {
+      const resp = await fetch(DEVICES_CREATE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newDevice),
       });
       if (!resp.ok) {
-        console.error('Error adding device:', await resp.text());
+        const errorText = await resp.text();
+        console.error('Error adding device:', errorText);
       } else {
         // refresh list
         fetchDevices();
@@ -183,14 +190,18 @@ const DeviceManager: React.FC = () => {
     }
   };
 
-  // DELETE /devices/{id}
+  // DELETE /devices/{deviceId}
   const handleRemoveDevice = async (deviceId: string) => {
     try {
       // Add back the prefix for the backend
       const deviceIdWithPrefix = `PWP-D-${deviceId}`;
-      const resp = await fetch(`${DEVICES_API_URL}/${deviceIdWithPrefix}`, { method: 'DELETE' });
+      // Use the permanent delete endpoint with the correct path variable name
+      const resp = await fetch(`${DEVICES_DELETE_URL}/${deviceIdWithPrefix}`, { 
+        method: 'DELETE'
+      });
       if (!resp.ok) {
-        console.error('Failed to remove device:', await resp.text());
+        const errorText = await resp.text();
+        console.error('Failed to remove device:', errorText);
       } else {
         // refresh
         fetchDevices();
