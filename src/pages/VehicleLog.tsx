@@ -270,7 +270,7 @@ const VehicleLog: React.FC = () => {
   };
 
   return (
-    <div className="vehicle-log">
+    <div className={`vehicle-log ${alprEntries.length > 0 ? 'has-data' : ''}`}>
       <div className="refresh-bar-wrapper">
         <div className="refresh-bar">
           <div className="refresh-bar-fill" style={{ width: `${refreshProgress}%` }}></div>
@@ -302,7 +302,7 @@ const VehicleLog: React.FC = () => {
         </button>
       </div>
 
-      <table className="vehicle-log-table">
+      <table className={`vehicle-log-table ${alprEntries.length > 0 ? 'has-data' : ''}`}>
         <thead>
           <tr>
             <th onClick={() => handleSort('plateNumber')} className="sortable-column">
@@ -391,11 +391,18 @@ const VehicleLog: React.FC = () => {
         </tbody>
       </table>
 
-      <div className="clear-all-container">
-        <button className="clear-all-button" onClick={() => setShowClearConfirmModal(true)}>
-          Clear All
-        </button>
-      </div>
+      {filteredResults.length === 0 ? (
+        <div className="no-data-container">
+          <h3 className="no-results-header">No Results Found</h3>
+          <p>This lot has no ALPR Data available</p>
+        </div>
+      ) : (
+        <div className="clear-all-container">
+          <button className="clear-all-button" onClick={() => setShowClearConfirmModal(true)}>
+            Clear All
+          </button>
+        </div>
+      )}
 
       {showModal && (
         <div className="modal-overlay">

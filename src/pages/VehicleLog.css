@@ -42,12 +42,12 @@
     flex: 1;
     padding: 8px 20px;
     background-color: transparent;
-    border: 2px solid #E5E5E5;
-    color: #E5E5E5;
+    border: 2px solid rgba(229, 229, 229, 0.5);
+    color: rgba(229, 229, 229, 0.5);
     border-radius: 25px;
     font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
     height: 40px;
     display: flex;
     align-items: center;
@@ -56,8 +56,21 @@
 }
 
 .download-button:hover {
+    background-color: rgba(229, 229, 229, 0.1);
+    color: rgba(229, 229, 229, 0.8);
+    border-color: rgba(229, 229, 229, 0.8);
+}
+
+/* Override opacity for Add Manual Entry button */
+.download-button:last-child {
+    border-color: #E5E5E5;
+    color: #E5E5E5;
+}
+
+.download-button:last-child:hover {
     background-color: #E5E5E5;
     color: #272A30;
+    border-color: #E5E5E5;
 }
 
 .vehicle-log-table {
@@ -70,8 +83,13 @@
     text-align: left;
     padding: 15px 20px;
     background-color: #272A30;
-    color: #E5E5E5;
+    color: rgba(229, 229, 229, 0.5);
     font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.vehicle-log-table.has-data th {
+    color: #E5E5E5;
 }
 
 .vehicle-log-table td {
@@ -191,13 +209,65 @@
     cursor: pointer;
     padding: 5px 0;
     transition: color 0.2s ease;
+    text-align: left;
+    font-weight: 400;
 }
 
 .clear-all-button:hover {
-    color: rgba(255, 255, 255, 1);
+    color: rgb(255, 255, 255);
     text-decoration: underline;
+    background-color: transparent;
 }
 
 .clear-all-button:active {
     color: rgba(255, 255, 255, 0.9);
+}
+
+.no-data-container {
+    margin-top: 20px;
+    padding-left: 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+.no-results-header {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: -8px;
+}
+
+.sort-arrow {
+    width: 12px;
+    height: 12px;
+    margin-left: 5px;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+.vehicle-log-table.has-data .sort-arrow {
+    opacity: 1;
+}
+
+/* Override opacity for selected sort arrow */
+.vehicle-log-table th img[src*="FilterArrowSelected"] {
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+.vehicle-log-table.has-data th img[src*="FilterArrowSelected"] {
+    opacity: 1;
+}
+
+/* Override download button opacity when data is present */
+.vehicle-log.has-data .download-button:first-of-type {
+    border-color: #E5E5E5;
+    color: #E5E5E5;
+}
+
+.vehicle-log.has-data .download-button:first-of-type:hover {
+    background-color: #E5E5E5;
+    color: #272A30;
+    border-color: #E5E5E5;
 }
