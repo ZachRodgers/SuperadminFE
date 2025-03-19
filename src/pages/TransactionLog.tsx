@@ -110,7 +110,7 @@ const BillingCalculator: React.FC = () => {
     };
 
     return (
-        <div className="billing-calculator">
+        <div className={`billing-calculator ${filteredResults.length > 0 ? 'has-data' : ''}`}>
             <h1>Transaction Log</h1>
             <div className="search-and-view">
                 <div className="search-bar">
@@ -126,7 +126,7 @@ const BillingCalculator: React.FC = () => {
                     View Saved Settings
                 </button>
             </div>
-            <table className="billing-calculator-table">
+            <table className={`billing-calculator-table ${filteredResults.length > 0 ? 'has-data' : ''}`}>
                 <thead>
                     <tr>
                         <th onClick={() => handleSort('plate')} className="sortable-column">
@@ -176,6 +176,13 @@ const BillingCalculator: React.FC = () => {
                     ))}
                 </tbody>
             </table>
+
+            {filteredResults.length === 0 && (
+                <div className="no-data-container">
+                    <h3 className="no-results-header">No Results Found</h3>
+                    <p>This lot has no Transaction Data available</p>
+                </div>
+            )}
         </div>
     );
 };

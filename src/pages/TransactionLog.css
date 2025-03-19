@@ -69,8 +69,13 @@
     text-align: left;
     padding: 15px 20px;
     background-color: #272A30;
-    color: #E5E5E5;
+    color: rgba(229, 229, 229, 0.5);
     font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.billing-calculator-table.has-data th {
+    color: #E5E5E5;
 }
 
 .billing-calculator-table td {
@@ -127,5 +132,42 @@
 .billing-calculator-table a:hover {
     color: #ffffff; /* Optional: Color when hovered */
     text-decoration: underline; /* Optional: Add underline on hover */
+}
+
+.sort-arrow {
+    width: 12px;
+    height: 12px;
+    margin-left: 5px;
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+.billing-calculator-table.has-data .sort-arrow {
+    opacity: 1;
+}
+
+/* Override opacity for selected sort arrow */
+.billing-calculator-table th img[src*="FilterArrowSelected"] {
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+.billing-calculator-table.has-data th img[src*="FilterArrowSelected"] {
+    opacity: 1;
+}
+
+.no-data-container {
+    margin-top: 20px;
+    padding-left: 20px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+.no-results-header {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: -8px;
 }
 
