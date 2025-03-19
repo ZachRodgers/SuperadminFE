@@ -4,11 +4,15 @@ import Modal from '../components/Modal';
 import './DeviceManager.css';
 import './RefreshBar.css';
 
+// Points to your new device endpoints (DevicesController).
 const DEVICES_API_URL = 'http://localhost:8085/ParkingWithParallel/devices';
-const REFRESH_INTERVAL_MS = 10000; // 10 seconds
-const PROGRESS_UPDATE_MS = 100; // how often we update the refresh bar
+
+// Refresh bar constants
+const REFRESH_INTERVAL_MS = 10000; // 10 seconds for full auto-refresh
+const PROGRESS_UPDATE_MS = 100;    // update progress bar every 100ms
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 
+// Matches your /devices schema from Swagger
 interface Device {
   deviceId: string;
   lotId: string;
@@ -16,8 +20,8 @@ interface Device {
   isWifiRegistered: boolean;
   wifiNetworkName: string;
   wifiPassword: string;
-  deviceStatus: string; // Online, Offline, RecentlyAdded, Calibrating
-  lastActive: string;   // ISO date string
+  deviceStatus: string;   // e.g. "Online", "Offline", "RecentlyAdded", ...
+  lastActive: string;
   deviceTemp: number;
   createdOn: string | null;
   createdBy: string | null;
@@ -26,16 +30,18 @@ interface Device {
   isDeleted: boolean;
 }
 
+// Internally for easier rendering
 interface ParsedDevice {
   id: string;
-  statusText: string;    // e.g. "Online 32°C", "Offline", etc.
-  updatedText: string;   // e.g. "3 mins ago", "Recently Added", etc.
-  network: string;       // wifiNetworkName
+  statusText: string;       // e.g. "Online 32°C" or "Offline"
+  updatedText: string;      // e.g. "Recently Added • 3 mins ago"
+  network: string;
   isOnline: boolean;
-  colorClass: 'online' | 'offline' | 'calibrating' | 'offline'; 
+  colorClass: 'online' | 'calibrating' | 'offline';
 }
 
 const DeviceManager: React.FC = () => {
+  // URL param: /lot/:lotId/device-manager
   const { lotId } = useParams<{ lotId: string }>();
 
   const [devices, setDevices] = useState<Device[]>([]);
@@ -44,47 +50,45 @@ const DeviceManager: React.FC = () => {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [nextDeviceId, setNextDeviceId] = useState<string | null>(null);
 
-  // Refresh bar state
+  // Auto-refresh progress bar
   const [progress, setProgress] = useState(0);
 
-  // Fetch devices on load
+  // 1) Fetch devices on mount
   useEffect(() => {
     fetchDevices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-refresh using the progress bar
+  // 2) Auto-refresh using the progress bar
   useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        // If we hit 100%, reset and fetch
+    const timer = setInterval(() => {
+      setProgress(prev => {
         if (prev >= 100) {
+          // Time to fetch
           fetchDevices();
           return 0;
         }
-        // Otherwise increment
+        // step so we reach 100% in REFRESH_INTERVAL_MS
         const step = 100 / (REFRESH_INTERVAL_MS / PROGRESS_UPDATE_MS);
         return prev + step;
       });
     }, PROGRESS_UPDATE_MS);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, [progress]);
 
-  // Fetch devices from the Spring Boot backend
+  // GET /devices => filter by lotId
   const fetchDevices = async () => {
-    if (!lotId) return; // no lot ID in URL
-
+    if (!lotId) return; // if no lotId in the URL, skip
     try {
       const response = await fetch(DEVICES_API_URL);
       if (!response.ok) {
         console.error('Failed to fetch devices. Status:', response.status);
         return;
       }
-      const data: Device[] = await response.json();
-
+      const allDevices: Device[] = await response.json();
       // Filter devices for this lot
-      const lotDevices = data.filter((d) => d.lotId === lotId);
-
+      const lotDevices = allDevices.filter(d => d.lotId === lotId);
       setDevices(lotDevices);
       calculateNextDeviceId(lotDevices);
     } catch (error) {
@@ -92,44 +96,41 @@ const DeviceManager: React.FC = () => {
     }
   };
 
-  // Determine the next device ID (lotId + a/b/c, etc.)
+  // Figure out the next deviceId by trying lotId+'a', lotId+'b', ...
   const calculateNextDeviceId = (lotDevices: Device[]) => {
     if (!lotId) {
       setNextDeviceId(null);
       return;
     }
-
-    const existingIds = lotDevices.map((device) => device.deviceId);
-
-    // For each letter in a-z, see if lotId + letter is free
+    const existingIds = lotDevices.map(d => d.deviceId);
     for (let i = 0; i < ALPHABET.length; i++) {
-      const potentialId = `${lotId}${ALPHABET[i]}`;
-      if (!existingIds.includes(potentialId)) {
-        setNextDeviceId(potentialId);
+      const candidate = `${lotId}${ALPHABET[i]}`;
+      if (!existingIds.includes(candidate)) {
+        setNextDeviceId(candidate);
         return;
       }
     }
+    // all letters used up
     setNextDeviceId(null);
   };
 
-  // Manual refresh (click on "Refreshing...")
+  // Manual refresh if user clicks the "Refreshing..." text
   const handleManualRefresh = () => {
     fetchDevices();
     setProgress(0);
   };
 
-  // "Add Device" flow
+  // POST /devices => add a new device
   const handleAddDevice = async () => {
     if (!nextDeviceId || !lotId) {
-      console.error('No next device ID available or missing lotId.');
+      console.error('No next device ID or missing lotId');
       return;
     }
-
     const now = new Date().toISOString();
     const newDevice: Device = {
       deviceId: nextDeviceId,
       lotId: lotId,
-      deviceType: 'ALPR',         // or any default
+      deviceType: 'ALPR',
       isWifiRegistered: false,
       wifiNetworkName: 'N/A',
       wifiPassword: 'N/A',
@@ -137,38 +138,37 @@ const DeviceManager: React.FC = () => {
       lastActive: now,
       deviceTemp: 0,
       createdOn: now,
-      createdBy: 'admin',         // adjust as needed
+      createdBy: 'superadmin', // or from localStorage
       modifiedOn: null,
       modifiedBy: null,
       isDeleted: false
     };
-
     try {
-      const response = await fetch(DEVICES_API_URL, {
+      const resp = await fetch(DEVICES_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newDevice),
       });
-      if (response.ok) {
-        fetchDevices();
+      if (!resp.ok) {
+        console.error('Error adding device:', await resp.text());
       } else {
-        console.error('Error adding device:', await response.text());
+        // refresh list
+        fetchDevices();
       }
     } catch (error) {
       console.error('Error adding device:', error);
     }
   };
 
-  // "Remove Device" flow
+  // DELETE /devices/{id}
   const handleRemoveDevice = async (deviceId: string) => {
     try {
-      const response = await fetch(`${DEVICES_API_URL}/${deviceId}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        fetchDevices();
+      const resp = await fetch(`${DEVICES_API_URL}/${deviceId}`, { method: 'DELETE' });
+      if (!resp.ok) {
+        console.error('Failed to remove device:', await resp.text());
       } else {
-        console.error('Failed to remove device:', await response.text());
+        // refresh
+        fetchDevices();
       }
     } catch (error) {
       console.error('Error removing device:', error);
@@ -186,7 +186,7 @@ const DeviceManager: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // Modal confirmations
+  // Modal "confirm" => calls add or remove
   const handleConfirmModal = () => {
     if (modalAction === 'add') {
       handleAddDevice();
@@ -195,31 +195,26 @@ const DeviceManager: React.FC = () => {
     }
     setIsModalOpen(false);
   };
-  const handleCancelModal = () => {
-    setIsModalOpen(false);
-  };
+  const handleCancelModal = () => setIsModalOpen(false);
 
-  // Utility to display how long ago lastActive was
+  // Utility: how long ago was lastActive
   const getRelativeTime = (timestamp: string | null): string => {
     if (!timestamp) return 'No activity';
     const parsedDate = new Date(timestamp);
-    if (isNaN(parsedDate.getTime())) {
-      return 'Invalid date';
-    }
+    if (isNaN(parsedDate.getTime())) return 'Invalid date';
 
     const now = new Date();
     const diffMs = now.getTime() - parsedDate.getTime();
-    const diffSeconds = Math.round(diffMs / 1000);
-    const diffMinutes = Math.round(diffSeconds / 60);
-    const diffHours = Math.round(diffMinutes / 60);
-    const diffDays = Math.round(diffHours / 24);
+    const diffSec = Math.round(diffMs / 1000);
+    const diffMin = Math.round(diffSec / 60);
+    const diffHr = Math.round(diffMin / 60);
+    const diffDays = Math.round(diffHr / 24);
 
-    if (diffSeconds < 60) return `${diffSeconds} seconds ago`;
-    if (diffMinutes < 60) return `${diffMinutes} mins ago`;
-    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffSec < 60) return `${diffSec} seconds ago`;
+    if (diffMin < 60) return `${diffMin} mins ago`;
+    if (diffHr < 24) return `${diffHr} hours ago`;
     if (diffDays <= 7) return `${diffDays} days ago`;
-
-    // Fallback: show a formatted date
+    // fallback: e.g. "September 18, 2:12 PM"
     return parsedDate.toLocaleString('en-US', {
       month: 'long',
       day: 'numeric',
@@ -229,27 +224,27 @@ const DeviceManager: React.FC = () => {
     });
   };
 
-  // Convert a Device from DB into the data needed for rendering
+  // Convert from raw Device -> info for rendering
   const parseDevice = (device: Device): ParsedDevice => {
     const { deviceId, deviceStatus, deviceTemp, wifiNetworkName, lastActive } = device;
 
-    // 1) Determine color class
-    let colorClass: 'online' | 'offline' | 'calibrating' | 'offline' = 'offline';
+    let colorClass: 'online' | 'calibrating' | 'offline' = 'offline';
     if (deviceStatus === 'Online') colorClass = 'online';
     else if (deviceStatus === 'Calibrating') colorClass = 'calibrating';
-    else if (deviceStatus === 'RecentlyAdded') colorClass = 'offline'; // treat as offline color
+    else if (deviceStatus === 'RecentlyAdded') {
+      colorClass = 'offline'; // treat as offline color
+    }
 
-    // 2) Build the status text
-    // "Online 32°C", "Offline", "Calibrating", etc.
+    // status text
     let statusText = deviceStatus;
     if (deviceStatus === 'Online' && deviceTemp !== 0) {
       statusText = `Online ${deviceTemp}°C`;
     } else if (deviceStatus === 'RecentlyAdded') {
-      // show "Offline" for the actual text, but keep deviceStatus if you want
+      // We display "Offline" but keep deviceStatus for color
       statusText = 'Offline';
     }
 
-    // 3) Build the updated text from lastActive
+    // updated text
     let updatedText = getRelativeTime(lastActive);
     if (deviceStatus === 'RecentlyAdded') {
       updatedText = `Recently Added • ${updatedText}`;
@@ -267,10 +262,10 @@ const DeviceManager: React.FC = () => {
 
   return (
     <div className="device-manager">
-      {/* Refresh Bar */}
+      {/* Refresh bar */}
       <div className="refresh-bar-wrapper">
         <div className="refresh-bar">
-          <div className="refresh-bar-fill" style={{ width: `${progress}%` }}></div>
+          <div className="refresh-bar-fill" style={{ width: `${progress}%` }} />
         </div>
         <div className="refresh-text" onClick={handleManualRefresh}>
           Refreshing...
@@ -279,32 +274,31 @@ const DeviceManager: React.FC = () => {
 
       <h1>Device Manager</h1>
 
-      {/* Device List */}
       <div className="device-list">
-        {devices.map((device, index) => {
-          const parsedDevice = parseDevice(device);
+        {devices.map((device, idx) => {
+          const parsed = parseDevice(device);
           return (
             <div
-              key={parsedDevice.id}
-              className={`device ${parsedDevice.colorClass}`}
+              key={parsed.id}
+              className={`device ${parsed.colorClass}`}
               style={{
-                backgroundColor: index % 2 === 0 ? '#363941' : '#2B2E35',
+                backgroundColor: idx % 2 === 0 ? '#363941' : '#2B2E35',
               }}
             >
               <div className="device-info">
-                <h2>{parsedDevice.id}</h2>
-                <p className="status">{parsedDevice.statusText}</p>
-                <p className="updated">{parsedDevice.updatedText}</p>
+                <h2>{parsed.id}</h2>
+                <p className="status">{parsed.statusText}</p>
+                <p className="updated">{parsed.updatedText}</p>
               </div>
               <div className="device-actions">
                 <div className="action">
-                  <button disabled={!parsedDevice.isOnline}>
+                  <button disabled={!parsed.isOnline}>
                     <img src="/assets/power.svg" alt="Shutdown Icon" />
                   </button>
                   <span>Shutdown</span>
                 </div>
                 <div className="action">
-                  <button disabled={!parsedDevice.isOnline}>
+                  <button disabled={!parsed.isOnline}>
                     <img src="/assets/reboot.svg" alt="Reboot Icon" />
                   </button>
                   <span>Reboot</span>
@@ -314,11 +308,11 @@ const DeviceManager: React.FC = () => {
                 <p>
                   Network
                   <br />
-                  {parsedDevice.network}
+                  {parsed.network}
                 </p>
               </div>
               <div className="remove-device">
-                <button onClick={() => openRemoveModal(parsedDevice.id)}>
+                <button onClick={() => openRemoveModal(parsed.id)}>
                   <img src="/assets/Minus.svg" alt="Remove Device" />
                 </button>
               </div>
@@ -326,7 +320,7 @@ const DeviceManager: React.FC = () => {
           );
         })}
 
-        {/* "Add New Device" tile */}
+        {/* "Add Device" tile */}
         <div
           className="add-new-device"
           onClick={openAddModal}
@@ -346,18 +340,17 @@ const DeviceManager: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal for Add/Remove confirmation */}
       {isModalOpen && (
         <Modal
           title={
             modalAction === 'add'
-              ? 'Please confirm adding a new device.'
-              : 'Please confirm removing this device.'
+              ? 'Confirm adding a new device'
+              : 'Confirm removing this device'
           }
           message={
             modalAction === 'add'
-              ? 'Devices will appear as RecentlyAdded until fully configured.'
-              : 'Removed devices will not send parking data. You can re-add them later.'
+              ? 'It will appear as "RecentlyAdded" until configured.'
+              : 'Removing a device stops its data reporting. You can re-add later.'
           }
           confirmText={modalAction === 'add' ? 'Add Device' : 'Remove Device'}
           cancelText="Cancel"
