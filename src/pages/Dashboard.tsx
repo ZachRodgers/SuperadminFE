@@ -247,18 +247,28 @@ const Dashboard: React.FC = () => {
                   onClick={() => handleSort(key as keyof Lot)}
                   className="sortable-column"
                 >
-                  {key === 'purchaseDate'
-                    ? 'Purchased'
-                    : key.charAt(0).toUpperCase() + key.slice(1)}
-                  <img
-                    src={sortConfig.key === key ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                    alt="Sort Arrow"
-                    className={`dashboard-sort-arrow ${sortConfig.key === key && sortConfig.direction === 'descending' ? 'descending' : ''}`}
-                  />
+                  <div className="header-content">
+                    <span className="header-text">
+                      {key === 'purchaseDate'
+                        ? 'Purchased'
+                        : key === 'companyName'
+                        ? 'Company'
+                        : key.charAt(0).toUpperCase() + key.slice(1)}
+                    </span>
+                    <img
+                      src={sortConfig.key === key ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                      alt="Sort Arrow"
+                      className={`sort-arrow ${sortConfig.key === key && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                    />
+                  </div>
                 </th>
               ))}
-              <th>Devices</th>
-              <th>Admin</th>
+              <th>
+                <span className="header-text">Devices</span>
+              </th>
+              <th>
+                <span className="header-text">Operator</span>
+              </th>
             </tr>
           </thead>
           <tbody>

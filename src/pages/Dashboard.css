@@ -132,8 +132,22 @@
   background-color: #272A30;
   color: #E5E5E5;
   font-weight: 800;
-  white-space: nowrap;
+}
+
+.dashboard-table th .header-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.dashboard-table th .header-text {
+  display: inline-block;
+  max-width: calc(100% - 20px);
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dashboard-table td {
@@ -235,10 +249,8 @@
 .sort-arrow {
   width: 16px;
   height: 16px;
-  margin-left: 8px;
-  margin-top: 5px;
   transform: none;
-  transition: transform 0.2s ease, margin-top 0.2s ease; /* Animation for rotation and position */
+  transition: transform 0.2s ease;
 }
 
 .sort-arrow.descending {
@@ -261,18 +273,4 @@
 
 .dashboard-table tr:hover .extra-devices {
   color: #272A30; /* Changes to dark color when row is hovered */
-}
-
-.dashboard-sort-arrow {
-  width: 15px;
-  height: 15px;
-  margin-left: 8px;
-  margin-top: 5px;
-  transform: none;
-  transition: transform 0.2s ease;
-  opacity: 1;
-}
-
-.dashboard-sort-arrow.descending {
-  transform: rotate(180deg);
 }
