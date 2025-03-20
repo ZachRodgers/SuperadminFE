@@ -306,64 +306,54 @@ const VehicleLog: React.FC = () => {
         <thead>
           <tr>
             <th onClick={() => handleSort('plateNumber')} className="sortable-column">
-              Plate
-              <img
-                src={sortConfig.key === 'plateNumber' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                alt="Sort Arrow"
-                className={
-                  sortConfig.key === 'plateNumber' && sortConfig.direction === 'descending'
-                    ? 'sort-arrow descending'
-                    : 'sort-arrow'
-                }
-              />
+              <div className="vehicle-log-header-content">
+                <span className="vehicle-log-header-text">Plate</span>
+                <img
+                  src={sortConfig.key === 'plateNumber' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                  alt="Sort Arrow"
+                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'plateNumber' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                />
+              </div>
             </th>
             <th onClick={() => handleSort('timestamp')} className="sortable-column">
-              Date
-              <img
-                src={sortConfig.key === 'timestamp' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                alt="Sort Arrow"
-                className={
-                  sortConfig.key === 'timestamp' && sortConfig.direction === 'descending'
-                    ? 'sort-arrow descending'
-                    : 'sort-arrow'
-                }
-              />
+              <div className="vehicle-log-header-content">
+                <span className="vehicle-log-header-text">Date</span>
+                <img
+                  src={sortConfig.key === 'timestamp' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                  alt="Sort Arrow"
+                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'timestamp' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                />
+              </div>
             </th>
             <th onClick={() => handleSort('time')} className="sortable-column">
-              Time
-              <img
-                src={sortConfig.key === 'time' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                alt="Sort Arrow"
-                className={
-                  sortConfig.key === 'time' && sortConfig.direction === 'descending'
-                    ? 'sort-arrow descending'
-                    : 'sort-arrow'
-                }
-              />
+              <div className="vehicle-log-header-content">
+                <span className="vehicle-log-header-text">Time</span>
+                <img
+                  src={sortConfig.key === 'time' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                  alt="Sort Arrow"
+                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'time' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                />
+              </div>
             </th>
             <th onClick={() => handleSort('status')} className="sortable-column">
-              State
-              <img
-                src={sortConfig.key === 'status' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                alt="Sort Arrow"
-                className={
-                  sortConfig.key === 'status' && sortConfig.direction === 'descending'
-                    ? 'sort-arrow descending'
-                    : 'sort-arrow'
-                }
-              />
+              <div className="vehicle-log-header-content">
+                <span className="vehicle-log-header-text">State</span>
+                <img
+                  src={sortConfig.key === 'status' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                  alt="Sort Arrow"
+                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'status' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                />
+              </div>
             </th>
             <th onClick={() => handleSort('confidence')} className="sortable-column">
-              Confidence
-              <img
-                src={sortConfig.key === 'confidence' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                alt="Sort Arrow"
-                className={
-                  sortConfig.key === 'confidence' && sortConfig.direction === 'descending'
-                    ? 'sort-arrow descending'
-                    : 'sort-arrow'
-                }
-              />
+              <div className="vehicle-log-header-content">
+                <span className="vehicle-log-header-text">Confidence</span>
+                <img
+                  src={sortConfig.key === 'confidence' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                  alt="Sort Arrow"
+                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'confidence' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                />
+              </div>
             </th>
             <th>Image</th>
           </tr>

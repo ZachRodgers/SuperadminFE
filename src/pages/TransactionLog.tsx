@@ -130,25 +130,55 @@ const BillingCalculator: React.FC = () => {
                 <thead>
                     <tr>
                         <th onClick={() => handleSort('plate')} className="sortable-column">
-                            Plate
-                            {renderArrow('plate')}
+                            <div className="transaction-log-header-content">
+                                <span className="transaction-log-header-text">Plate</span>
+                                <img
+                                    src={sortConfig.key === 'plate' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                                    alt="Sort Arrow"
+                                    className={`transaction-log-sort-arrow ${sortConfig.key === 'plate' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                                />
+                            </div>
                         </th>
                         <th onClick={() => handleSort('timestampIn')} className="sortable-column">
-                            Date
-                            {renderArrow('timestampIn')}
+                            <div className="transaction-log-header-content">
+                                <span className="transaction-log-header-text">Date</span>
+                                <img
+                                    src={sortConfig.key === 'timestampIn' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                                    alt="Sort Arrow"
+                                    className={`transaction-log-sort-arrow ${sortConfig.key === 'timestampIn' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                                />
+                            </div>
                         </th>
                         <th onClick={() => handleSort('duration')} className="sortable-column">
-                            Duration
-                            {renderArrow('duration')}
+                            <div className="transaction-log-header-content">
+                                <span className="transaction-log-header-text">Duration</span>
+                                <img
+                                    src={sortConfig.key === 'duration' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                                    alt="Sort Arrow"
+                                    className={`transaction-log-sort-arrow ${sortConfig.key === 'duration' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                                />
+                            </div>
                         </th>
                         <th onClick={() => handleSort('amountOwed')} className="sortable-column">
-                            Amount Owed
-                            {renderArrow('amountOwed')}
+                            <div className="transaction-log-header-content">
+                                <span className="transaction-log-header-text">Cost</span>
+                                <img
+                                    src={sortConfig.key === 'amountOwed' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                                    alt="Sort Arrow"
+                                    className={`transaction-log-sort-arrow ${sortConfig.key === 'amountOwed' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                                />
+                            </div>
                         </th>
                         <th>Settings</th>
                         <th onClick={() => handleSort('status')} className="sortable-column">
-                            Status
-                            {renderArrow('status')}
+                            <div className="transaction-log-header-content">
+                                <span className="transaction-log-header-text">Status</span>
+                                <img
+                                    src={sortConfig.key === 'status' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                                    alt="Sort Arrow"
+                                    className={`transaction-log-sort-arrow ${sortConfig.key === 'status' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                                />
+                            </div>
                         </th>
                     </tr>
                 </thead>

@@ -88,6 +88,22 @@
     transition: color 0.3s ease;
 }
 
+.vehicle-log-table th .vehicle-log-header-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.vehicle-log-table th .vehicle-log-header-text {
+    display: inline-block;
+    max-width: calc(100% - 20px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .vehicle-log-table.has-data th {
     color: #E5E5E5;
 }
@@ -239,10 +255,8 @@
 }
 
 .vehicle-log-sort-arrow {
-    width: 12px;
-    height: 12px;
-    margin-left: 8px;
-    margin-top: 5px;
+    width: 15px;
+    height: 15px;
     transform: none;
     transition: transform 0.2s ease, opacity 0.3s ease;
     opacity: 0.5;
