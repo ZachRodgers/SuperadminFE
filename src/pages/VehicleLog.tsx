@@ -294,11 +294,17 @@ const VehicleLog: React.FC = () => {
         </div>
 
         <button className="download-button" onClick={handleDownload}>
-          Download as Sheet
+          <span className="button-text">
+            <span className="full-text">Download as Sheet</span>
+            <span className="short-text">Download</span>
+          </span>
         </button>
 
         <button className="download-button" onClick={() => setShowModal(true)} style={{ marginRight: '0' }}>
-          Add Manual Entry
+          <span className="button-text">
+            <span className="full-text">Add Manual Entry</span>
+            <span className="short-text">+ Entry</span>
+          </span>
         </button>
       </div>
 

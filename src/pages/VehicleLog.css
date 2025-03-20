@@ -53,6 +53,26 @@
     align-items: center;
     justify-content: center;
     margin-top: 1px;
+    min-width: 0;
+}
+
+.download-button .button-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.download-button .short-text {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .download-button .full-text {
+        display: none;
+    }
+    .download-button .short-text {
+        display: inline;
+    }
 }
 
 .download-button:hover {

@@ -123,7 +123,10 @@ const BillingCalculator: React.FC = () => {
                     />
                 </div>
                 <button className="view-settings-button" onClick={() => alert('View Saved Settings clicked!')}>
-                    View Saved Settings
+                    <span className="button-text">
+                        <span className="full-text">View Saved Settings</span>
+                        <span className="short-text">Settings</span>
+                    </span>
                 </button>
             </div>
             <table className={`billing-calculator-table ${filteredResults.length > 0 ? 'has-data' : ''}`}>
