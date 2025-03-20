@@ -253,7 +253,7 @@ const Dashboard: React.FC = () => {
                   <img
                     src={sortConfig.key === key ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
                     alt="Sort Arrow"
-                    className={`sort-arrow ${sortConfig.key === key && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                    className={`dashboard-sort-arrow ${sortConfig.key === key && sortConfig.direction === 'descending' ? 'descending' : ''}`}
                   />
                 </th>
               ))}

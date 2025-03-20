@@ -238,25 +238,41 @@
     margin-bottom: -8px;
 }
 
-.sort-arrow {
+.vehicle-log-sort-arrow {
     width: 12px;
     height: 12px;
-    margin-left: 5px;
+    margin-left: 8px;
+    margin-top: 5px;
+    transform: none;
+    transition: transform 0.2s ease, opacity 0.3s ease;
     opacity: 0.5;
-    transition: opacity 0.3s ease;
 }
 
-.vehicle-log-table.has-data .sort-arrow {
+.vehicle-log-sort-arrow.descending {
+    transform: rotate(180deg);
+}
+
+/* Override opacity for arrows when data is present */
+.vehicle-log-table.has-data .vehicle-log-sort-arrow {
     opacity: 1;
 }
 
-/* Override opacity for selected sort arrow */
-.vehicle-log-table th img[src*="FilterArrowSelected"] {
+/* Override opacity for selected sort arrow when no data */
+.vehicle-log-table th img[src*="FilterArrowSelected"].vehicle-log-sort-arrow {
     opacity: 0.5;
-    transition: opacity 0.3s ease;
 }
 
-.vehicle-log-table.has-data th img[src*="FilterArrowSelected"] {
+/* Override opacity for selected sort arrow when data is present */
+.vehicle-log-table.has-data th img[src*="FilterArrowSelected"].vehicle-log-sort-arrow {
+    opacity: 1;
+}
+
+/* Override any global sort arrow styles */
+.vehicle-log-table th .sort-arrow {
+    opacity: 0.5;
+}
+
+.vehicle-log-table.has-data th .sort-arrow {
     opacity: 1;
 }
 

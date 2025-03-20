@@ -128,10 +128,12 @@
 
 .dashboard-table th {
   text-align: left;
-  padding: 25px 20px 25px 30px; /* Added extra left padding */
+  padding: 25px 20px 25px 30px;
   background-color: #272A30;
   color: #E5E5E5;
   font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .dashboard-table td {
@@ -259,4 +261,18 @@
 
 .dashboard-table tr:hover .extra-devices {
   color: #272A30; /* Changes to dark color when row is hovered */
+}
+
+.dashboard-sort-arrow {
+  width: 15px;
+  height: 15px;
+  margin-left: 8px;
+  margin-top: 5px;
+  transform: none;
+  transition: transform 0.2s ease;
+  opacity: 1;
+}
+
+.dashboard-sort-arrow.descending {
+  transform: rotate(180deg);
 }

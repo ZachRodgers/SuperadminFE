@@ -134,25 +134,41 @@
     text-decoration: underline; /* Optional: Add underline on hover */
 }
 
-.sort-arrow {
+.transaction-log-sort-arrow {
     width: 12px;
     height: 12px;
-    margin-left: 5px;
+    margin-left: 8px;
+    margin-top: 5px;
+    transform: none;
+    transition: transform 0.2s ease, opacity 0.3s ease;
     opacity: 0.5;
-    transition: opacity 0.3s ease;
 }
 
-.billing-calculator-table.has-data .sort-arrow {
+.transaction-log-sort-arrow.descending {
+    transform: rotate(180deg);
+}
+
+/* Override opacity for arrows when data is present */
+.billing-calculator-table.has-data .transaction-log-sort-arrow {
     opacity: 1;
 }
 
-/* Override opacity for selected sort arrow */
-.billing-calculator-table th img[src*="FilterArrowSelected"] {
+/* Override opacity for selected sort arrow when no data */
+.billing-calculator-table th img[src*="FilterArrowSelected"].transaction-log-sort-arrow {
     opacity: 0.5;
-    transition: opacity 0.3s ease;
 }
 
-.billing-calculator-table.has-data th img[src*="FilterArrowSelected"] {
+/* Override opacity for selected sort arrow when data is present */
+.billing-calculator-table.has-data th img[src*="FilterArrowSelected"].transaction-log-sort-arrow {
+    opacity: 1;
+}
+
+/* Override any global sort arrow styles */
+.billing-calculator-table th .sort-arrow {
+    opacity: 0.5;
+}
+
+.billing-calculator-table.has-data th .sort-arrow {
     opacity: 1;
 }
 
