@@ -38,6 +38,15 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phoneNo: '',
+    role: 'Operator'
+  });
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -98,10 +107,62 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
     if (isOpen) {
       fetchUsers();
       setSelectedUserId('');
+      setIsCreatingNew(false);
+      setNewUser({
+        name: '',
+        email: '',
+        password: '',
+        phoneNo: '',
+        role: type === 'operator' ? 'Operator' : type === 'staff' ? 'Staff' : 'Owner'
+      });
     }
   }, [isOpen, currentOwnerId, type, currentOperators, currentStaff]);
 
+  const handleCreateUser = async () => {
+    try {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newUser.email)) {
+        setEmailError('Please enter a valid email address');
+        return;
+      }
+
+      const response = await fetch('http://localhost:8085/ParkingWithParallel/users/create-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newUser.name,
+          email: newUser.email,
+          password: newUser.password,
+          phoneNo: newUser.phoneNo,
+          role: newUser.role,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        if (errorData === 'USER00002') {
+          setEmailError('A user with this email already exists');
+          return;
+        }
+        throw new Error(`Failed to create user: ${errorData}`);
+      }
+
+      const createdUser = await response.json();
+      onConfirm(createdUser.userId);
+      onClose();
+    } catch (err) {
+      console.error('Error creating user:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create user');
+    }
+  };
+
   const getTitle = () => {
+    if (isCreatingNew) {
+      return 'New User';
+    }
     switch (type) {
       case 'operator':
         return 'Add Operator';
@@ -132,36 +193,105 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h2>{getTitle()}</h2>
-        
-        <div className="select-container">
-          <select
-            value={selectedUserId}
-            onChange={(e) => setSelectedUserId(e.target.value)}
-            className="user-select"
+        <div className="modal-header">
+          <h2>{getTitle()}</h2>
+          <button 
+            className="new-user-button"
+            onClick={() => setIsCreatingNew(!isCreatingNew)}
           >
-            <option value="">Select a user...</option>
-            {users.map((user) => {
-              // Format the user ID by removing the prefix
-              const formattedUserId = user.userId.replace('PWP-U-', '');
-              return (
-                <option key={user.userId} value={user.userId}>
-                  {formattedUserId} ({user.email}) {user.name}
-                  {user.isVerified ? ' ✓' : ''}
-                  {user.isBanned ? ' 🚫' : ''}
-                </option>
-              );
-            })}
-          </select>
+            {isCreatingNew ? 'Select Existing' : '+ New User'}
+          </button>
         </div>
+        
+        {isCreatingNew ? (
+          <div className="new-user-form">
+            <div className="form-group">
+              <label>Name</label>
+              <input
+                type="text"
+                value={newUser.name}
+                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                placeholder="Enter name"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input
+                type="email"
+                value={newUser.email}
+                onChange={(e) => {
+                  setNewUser({ ...newUser, email: e.target.value });
+                  setEmailError(null);
+                }}
+                placeholder="Enter email"
+                required
+              />
+              {emailError && <div className="error">{emailError}</div>}
+            </div>
+            <div className="form-group">
+              <label>Password</label>
+              <input
+                type="password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                placeholder="Enter password"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Phone Number</label>
+              <input
+                type="tel"
+                value={newUser.phoneNo}
+                onChange={(e) => setNewUser({ ...newUser, phoneNo: e.target.value })}
+                placeholder="Enter phone number"
+              />
+            </div>
+            <div className="form-group">
+              <label>Role</label>
+              <select
+                value={newUser.role}
+                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+              >
+                <option value="SuperAdmin">Super Admin</option>
+                <option value="Operator">Operator</option>
+              </select>
+            </div>
+          </div>
+        ) : (
+          <div className="select-container">
+            <select
+              value={selectedUserId}
+              onChange={(e) => setSelectedUserId(e.target.value)}
+              className="user-select"
+            >
+              <option value="">Select a user...</option>
+              {users.map((user) => {
+                // Format the user ID by removing the prefix
+                const formattedUserId = user.userId.replace('PWP-U-', '');
+                return (
+                  <option key={user.userId} value={user.userId}>
+                    {formattedUserId} ({user.email}) {user.name}
+                    {user.isVerified ? ' ✓' : ''}
+                    {user.isBanned ? ' 🚫' : ''}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+        )}
 
         {error && <div className="error">{error}</div>}
         
         <div className="button-container">
           <button 
             className="confirm-button"
-            onClick={() => selectedUserId && onConfirm(selectedUserId)}
-            disabled={!selectedUserId}
+            onClick={isCreatingNew ? handleCreateUser : () => selectedUserId && onConfirm(selectedUserId)}
+            disabled={isCreatingNew ? 
+              !newUser.name || !newUser.email || !newUser.password || !newUser.phoneNo :
+              !selectedUserId
+            }
           >
             {getConfirmButtonText()}
           </button>
