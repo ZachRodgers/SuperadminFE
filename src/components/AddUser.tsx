@@ -29,9 +29,11 @@ interface AddUserProps {
   onConfirm: (userId: string) => void;
   currentOwnerId: string;
   type: 'operator' | 'staff' | 'owner';
+  currentOperators: User[];
+  currentStaff: User[];
 }
 
-const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOwnerId, type }) => {
+const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOwnerId, type, currentOperators, currentStaff }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -63,11 +65,25 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
           };
         });
 
-        // Filter out deleted users and the current owner
+        // Filter out deleted users, current owner, and existing operators/staff
         const filteredUsers = mappedUsers.filter((user: User) => {
-          const shouldInclude = !user.isDeleted && user.userId !== currentOwnerId;
-          console.log(`User ${user.userId}: deleted=${user.isDeleted}, currentOwner=${user.userId === currentOwnerId}, included=${shouldInclude}`);
-          return shouldInclude;
+          // Always filter out deleted users
+          if (user.isDeleted) return false;
+
+          // Filter out current owner
+          if (user.userId === currentOwnerId) return false;
+
+          // Filter out existing operators when adding an operator
+          if (type === 'operator' && currentOperators.some(op => op.userId === user.userId)) {
+            return false;
+          }
+
+          // Filter out existing staff when adding staff
+          if (type === 'staff' && currentStaff.some(s => s.userId === user.userId)) {
+            return false;
+          }
+
+          return true;
         });
         
         setUsers(filteredUsers);
@@ -83,7 +99,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
       fetchUsers();
       setSelectedUserId('');
     }
-  }, [isOpen, currentOwnerId]);
+  }, [isOpen, currentOwnerId, type, currentOperators, currentStaff]);
 
   const getTitle = () => {
     switch (type) {

@@ -714,6 +714,8 @@ const Customer: React.FC = () => {
           onConfirm={handleAddUser}
           currentOwnerId={lot.ownerCustomerId}
           type={addUserType || 'operator'}
+          currentOperators={operators}
+          currentStaff={staff}
         />
       )}
 
