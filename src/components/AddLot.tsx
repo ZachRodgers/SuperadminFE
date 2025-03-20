@@ -29,8 +29,23 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
     return nextNum; // Return just the number without any dashes
   };
 
+  // 1) Utility to get the next lot ID from backend
+  const getNextLotId = async () => {
+    try {
+      const response = await fetch('http://localhost:8085/ParkingWithParallel/parkinglots/get-next-id');
+      if (!response.ok) {
+        throw new Error('Failed to get next lot ID');
+      }
+      const data = await response.json();
+      return data.lotId;
+    } catch (error) {
+      console.error('Error getting next lot ID:', error);
+      // Fallback to computing locally if backend call fails
+      return computeNextLotId();
+    }
+  };
+
   // 2) Lot data state.
-  // We now use a field called ownerEmail for input.
   const [lotData, setLotData] = useState({
     lotId: '',
     companyName: '',
@@ -47,15 +62,18 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
     isDeleted: false,
   });
 
-  // On mount, compute suggested lotId and set current date.
+  // On mount, get next lotId from backend and set current date
   useEffect(() => {
-    const nextId = computeNextLotId();
-    const now = new Date().toISOString();
-    setLotData((prev) => ({
-      ...prev,
-      lotId: nextId,
-      createdOn: now,
-    }));
+    const initializeLotData = async () => {
+      const nextId = await getNextLotId();
+      const now = new Date().toISOString();
+      setLotData((prev) => ({
+        ...prev,
+        lotId: nextId,
+        createdOn: now,
+      }));
+    };
+    initializeLotData();
   }, []);
 
   /**
