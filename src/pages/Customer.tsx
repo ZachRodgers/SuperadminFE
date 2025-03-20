@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./Customer.css";
 import Modal from "../components/Modal";
+import AddUser from "../components/AddUser";
 
 const BASE_URL = "http://localhost:8085/ParkingWithParallel";
 const CURRENT_SUPERADMIN = "1";
@@ -53,6 +54,9 @@ const Customer: React.FC = () => {
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [addUserType, setAddUserType] = useState<'operator' | 'staff' | 'owner' | null>(null);
+  const [showDeleteUserModal, setShowDeleteUserModal] = useState<{ type: 'operator' | 'staff', userId: string } | null>(null);
 
   const fetchLot = async (id: string) => {
     try {
@@ -372,6 +376,85 @@ const Customer: React.FC = () => {
     return userId;
   };
 
+  const handleAddUser = (userId: string) => {
+    if (!lot) return;
+
+    let endpoint;
+    if (addUserType === 'owner') {
+      endpoint = `${BASE_URL}/parkinglots/change-owner/${lot.lotId}/${userId}`;
+    } else {
+      endpoint = addUserType === 'operator' 
+        ? `${BASE_URL}/parkinglots/add-operator/${lot.lotId}/${userId}`
+        : `${BASE_URL}/parkinglots/add-staff/${lot.lotId}/${userId}`;
+    }
+
+    fetch(endpoint, {
+      method: 'POST',
+    })
+    .then(async response => {
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server response:', errorText);
+        
+        if (response.status === 404) {
+          throw new Error('User or parking lot not found');
+        } else if (response.status === 500) {
+          throw new Error('Server error. Please try again later.');
+        } else {
+          throw new Error('Failed to add user');
+        }
+      }
+      // Refresh the appropriate list
+      if (addUserType === 'owner') {
+        fetchLot(lot.lotId);
+      } else if (addUserType === 'operator') {
+        fetchOperators(lot.lotId);
+      } else {
+        fetchStaff(lot.lotId);
+      }
+      setShowAddUserModal(false);
+      setAddUserType(null);
+    })
+    .catch(error => {
+      console.error('Error adding user:', error);
+      setErrorMessage(error.message || 'Failed to add user. Please try again.');
+    });
+  };
+
+  const openAddUserModal = (type: 'operator' | 'staff' | 'owner') => {
+    setAddUserType(type);
+    setShowAddUserModal(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!showDeleteUserModal || !lot) return;
+    
+    const { type, userId } = showDeleteUserModal;
+    const endpoint = `${BASE_URL}/parkinglots/remove-${type}/${lot.lotId}/${userId}`;
+    
+    try {
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to delete ${type}`);
+      }
+      
+      // Refresh the appropriate list
+      if (type === 'operator') {
+        fetchOperators(lot.lotId);
+      } else {
+        fetchStaff(lot.lotId);
+      }
+      
+      setShowDeleteUserModal(null);
+    } catch (error) {
+      console.error(`Error deleting ${type}:`, error);
+      setErrorMessage(`Failed to delete ${type}. Please try again.`);
+    }
+  };
+
   if (!lot) {
     return (
       <div className="customer-page">
@@ -452,7 +535,14 @@ const Customer: React.FC = () => {
                   <span className={editMode ? "Badge" : "NoBadge"}>
                     {formatUserId(owner.userId)} ({owner.email})
                   </span>
-                  {editMode && <button className="change-button">Change</button>}
+                  {editMode && (
+                    <button 
+                      className="change-button"
+                      onClick={() => openAddUserModal('owner')}
+                    >
+                      Change
+                    </button>
+                  )}
                 </div>
               ) : (
                 "Loading..."
@@ -467,12 +557,23 @@ const Customer: React.FC = () => {
                   <p key={operator.userId}>
                     <span className={editMode ? "Badge" : "NoBadge"}>
                       {formatUserId(operator.userId)} ({operator.email})
+                      {editMode && (
+                        <button 
+                          className="delete-badge-btn"
+                          onClick={() => setShowDeleteUserModal({ type: 'operator', userId: operator.userId })}
+                        >
+                          ×
+                        </button>
+                      )}
                     </span>
                   </p>
                 ))}
                 {editMode && (
                   <p>
-                    <button className="addidbtn">
+                    <button 
+                      className="addidbtn"
+                      onClick={() => openAddUserModal('operator')}
+                    >
                       <img src="/assets/Plus.svg" alt="Add Operator" />
                     </button>
                   </p>
@@ -488,12 +589,23 @@ const Customer: React.FC = () => {
                   <p key={staffMember.userId}>
                     <span className={editMode ? "Badge" : "NoBadge"}>
                       {formatUserId(staffMember.userId)} ({staffMember.email})
+                      {editMode && (
+                        <button 
+                          className="delete-badge-btn"
+                          onClick={() => setShowDeleteUserModal({ type: 'staff', userId: staffMember.userId })}
+                        >
+                          ×
+                        </button>
+                      )}
                     </span>
                   </p>
                 ))}
                 {editMode && (
                   <p>
-                    <button className="addidbtn">
+                    <button 
+                      className="addidbtn"
+                      onClick={() => openAddUserModal('staff')}
+                    >
                       <img src="/assets/Plus.svg" alt="Add Staff" />
                     </button>
                   </p>
@@ -588,6 +700,30 @@ const Customer: React.FC = () => {
           onConfirm={handleConfirmDelete}
           onCancel={handleCancelDelete}
           confirmText="Delete"
+          cancelText="Cancel"
+        />
+      )}
+
+      {showAddUserModal && (
+        <AddUser
+          isOpen={showAddUserModal}
+          onClose={() => {
+            setShowAddUserModal(false);
+            setAddUserType(null);
+          }}
+          onConfirm={handleAddUser}
+          currentOwnerId={lot.ownerCustomerId}
+          type={addUserType || 'operator'}
+        />
+      )}
+
+      {showDeleteUserModal && (
+        <Modal
+          title={`Remove ${showDeleteUserModal.type}`}
+          message={`Are you sure you want to remove this ${showDeleteUserModal.type}?`}
+          onConfirm={handleDeleteUser}
+          onCancel={() => setShowDeleteUserModal(null)}
+          confirmText="Remove"
           cancelText="Cancel"
         />
       )}

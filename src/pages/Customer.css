@@ -242,6 +242,7 @@ h1, h2 {
   line-height: 1;
   height: 28px;
   box-sizing: border-box;
+  margin-right: 5px;
 }
 
 .NoBadge {
@@ -250,6 +251,33 @@ h1, h2 {
 
 .Badge {
   background-color: #363941;
+  padding: 4px 8px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.delete-badge-btn {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 26px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  font-weight: 400;
+}
+
+.delete-badge-btn:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #ffffff;
 }
 
 .change-button {
