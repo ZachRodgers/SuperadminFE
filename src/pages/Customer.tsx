@@ -44,6 +44,8 @@ const Customer: React.FC = () => {
 
   const [lot, setLot] = useState<LotData | null>(null);
   const [owner, setOwner] = useState<UserData | null>(null);
+  const [operators, setOperators] = useState<UserData[]>([]);
+  const [staff, setStaff] = useState<UserData[]>([]);
   const [editableFields, setEditableFields] = useState<Partial<LotData>>({});
   const [editMode, setEditMode] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
@@ -102,8 +104,38 @@ const Customer: React.FC = () => {
     }
   };
 
+  const fetchOperators = async (id: string) => {
+    try {
+      const response = await fetch(`${BASE_URL}/parkinglots/get-operators/${id}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setOperators(data);
+    } catch (error) {
+      console.error("Error fetching operators:", error);
+    }
+  };
+
+  const fetchStaff = async (id: string) => {
+    try {
+      const response = await fetch(`${BASE_URL}/parkinglots/get-staff/${id}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setStaff(data);
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+    }
+  };
+
   useEffect(() => {
-    if (lotId) fetchLot(lotId);
+    if (lotId) {
+      fetchLot(lotId);
+      fetchOperators(lotId);
+      fetchStaff(lotId);
+    }
   }, [lotId]);
 
   const handleFieldChange = (field: keyof LotData, value: string) => {
@@ -331,6 +363,15 @@ const Customer: React.FC = () => {
     setShowDeleteModal(false);
   };
 
+  // Helper function to format user IDs
+  const formatUserId = (userId: string): string => {
+    const prefix = "PWP-U-";
+    if (userId.startsWith(prefix)) {
+      return userId.substring(prefix.length);
+    }
+    return userId;
+  };
+
   if (!lot) {
     return (
       <div className="customer-page">
@@ -397,6 +438,69 @@ const Customer: React.FC = () => {
           </p>
           <p className={editMode ? "disabled-text" : ""}>{formatDate(lot.createdOn)}</p>
           <p className={editMode ? "disabled-text" : ""}>{formatDate(lot.modifiedOn)}</p>
+        </div>
+      </div>
+
+      <h2>Roles</h2>
+      <div className="roles-section">
+        <div className="roles-table">
+          <div className="roles-table-row">
+            <div className="roles-table-cell">Owner ID:</div>
+            <div className="roles-table-cell">
+              {owner ? (
+                <div className="owner-container">
+                  <span className={editMode ? "Badge" : "NoBadge"}>
+                    {formatUserId(owner.userId)} ({owner.email})
+                  </span>
+                  {editMode && <button className="change-button">Change</button>}
+                </div>
+              ) : (
+                "Loading..."
+              )}
+            </div>
+          </div>
+          <div className="roles-table-row">
+            <div className="roles-table-cell">Operator ID's:</div>
+            <div className="roles-table-cell">
+              <div className="user-list">
+                {operators.map((operator) => (
+                  <p key={operator.userId}>
+                    <span className={editMode ? "Badge" : "NoBadge"}>
+                      {formatUserId(operator.userId)} ({operator.email})
+                    </span>
+                  </p>
+                ))}
+                {editMode && (
+                  <p>
+                    <button className="addidbtn">
+                      <img src="/assets/Plus.svg" alt="Add Operator" />
+                    </button>
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="roles-table-row">
+            <div className="roles-table-cell">Staff ID's:</div>
+            <div className="roles-table-cell">
+              <div className="user-list">
+                {staff.map((staffMember) => (
+                  <p key={staffMember.userId}>
+                    <span className={editMode ? "Badge" : "NoBadge"}>
+                      {formatUserId(staffMember.userId)} ({staffMember.email})
+                    </span>
+                  </p>
+                ))}
+                {editMode && (
+                  <p>
+                    <button className="addidbtn">
+                      <img src="/assets/Plus.svg" alt="Add Staff" />
+                    </button>
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

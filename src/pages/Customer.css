@@ -178,3 +178,126 @@ h1, h2 {
   font-size: 14px !important; /* Ensure modal text uses its style */
   text-align: center;
 }
+
+.roles-section {
+  display: grid;
+  grid-template-columns: 1fr 4fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.roles-table {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.roles-table-row {
+  display: table-row;
+}
+
+.roles-table-cell {
+  display: table-cell;
+  padding: 8px 0;
+  vertical-align: middle;
+  min-width: 190px;
+  width: 190px;
+}
+
+.roles-table-cell:last-child {
+  width: auto;
+}
+
+.user-list {
+  display: table-row;
+}
+
+.user-list p {
+  display: table-cell;
+  padding: 8px 0;
+  vertical-align: middle;
+  width: 190px;
+}
+
+.owner-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+}
+
+.NoBadge, .Badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  color: #ffffff;
+  white-space: nowrap;
+  width: fit-content;
+  margin: 0;
+  line-height: 1;
+  height: 28px;
+  box-sizing: border-box;
+}
+
+.NoBadge {
+  background-color: transparent;
+}
+
+.Badge {
+  background-color: #363941;
+}
+
+.change-button {
+  color: rgba(255, 255, 255, 0.5);
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: underline;
+  transition: 0.2s ease-in-out;
+  font-weight: 400;
+  line-height: 1;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.change-button:hover {
+  color: rgba(255, 255, 255, 1);
+  background: none;
+}
+
+.addidbtn {
+  color: rgba(255, 255, 255, 0.5);
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+  line-height: 1;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.addidbtn img {
+  width: 20px;
+  height: 20px;
+  opacity: 0.75;
+  transition: 0.2s ease-in-out;
+}
+
+.addidbtn:hover {
+  color: rgba(255, 255, 255, 1);
+  background: none;
+}
+
+.addidbtn:hover img {
+  opacity: 1;
+}
