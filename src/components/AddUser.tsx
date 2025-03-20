@@ -141,13 +141,17 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
             className="user-select"
           >
             <option value="">Select a user...</option>
-            {users.map((user) => (
-              <option key={user.userId} value={user.userId}>
-                {user.name} ({user.email}) - {user.role}
-                {user.isVerified ? ' ✓' : ''}
-                {user.isBanned ? ' 🚫' : ''}
-              </option>
-            ))}
+            {users.map((user) => {
+              // Format the user ID by removing the prefix
+              const formattedUserId = user.userId.replace('PWP-U-', '');
+              return (
+                <option key={user.userId} value={user.userId}>
+                  {formattedUserId} ({user.email}) {user.name}
+                  {user.isVerified ? ' ✓' : ''}
+                  {user.isBanned ? ' 🚫' : ''}
+                </option>
+              );
+            })}
           </select>
         </div>
 

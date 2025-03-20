@@ -12,7 +12,7 @@
 }
 
 .modal-content {
-  background: #1E1E1E;
+  background: #272A30;
   padding: 2rem;
   border-radius: 8px;
   width: 600px;
@@ -21,6 +21,7 @@
   flex-direction: column;
   gap: 1rem;
   color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .modal-content h2 {
@@ -63,8 +64,8 @@
 .user-select {
   width: 100%;
   padding: 0.75rem;
-  background: #2D2D2D;
-  border: 1px solid #333;
+  background: #363941;
+  border: 1px solid #444;
   border-radius: 4px;
   color: white;
   font-size: 1rem;
@@ -85,7 +86,7 @@
 }
 
 .user-select option {
-  background-color: #2D2D2D;
+  background-color: #363941;
   color: white;
   padding: 0.5rem;
 }
@@ -184,60 +185,60 @@
 
 .button-container {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 1rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #333;
 }
 
 .confirm-button, .cancel-button {
-  padding: 0.5rem 1.5rem;
+  width: 48%;
+  padding: 15px 0px;
+  font-size: 16px;
   border: none;
-  border-radius: 20px;
+  border-radius: 30px;
   cursor: pointer;
-  font-weight: 500;
   transition: all 0.2s ease;
-  font-size: 1rem;
 }
 
 .confirm-button {
-  background-color: #007bff;
+  background-color: #1782ff;
   color: white;
+  font-weight: 600;
+}
+
+.confirm-button:hover:not(:disabled) {
+  background-color: #ffffff;
+  color: #363941;
 }
 
 .confirm-button:disabled {
-  background-color: #0056b3;
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.confirm-button:not(:disabled):hover {
-  background-color: #0056b3;
-  transform: translateY(-1px);
-}
-
 .cancel-button {
-  background-color: #2D2D2D;
-  color: white;
+  background-color: #363941;
+  color: #e5e5e5;
+  font-weight: 400;
 }
 
 .cancel-button:hover {
-  background-color: #3D3D3D;
-  transform: translateY(-1px);
-}
-
-.loading, .error, .no-users {
-  text-align: center;
-  padding: 2rem;
-  color: #ccc;
-  font-size: 1.1rem;
+  background-color: #4A4F5A;
+  color: #ffffff;
 }
 
 .error {
   color: #ff4444;
-  background-color: #991b1b;
+  background-color: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.2);
   border-radius: 4px;
-  padding: 1rem;
+  padding: 0.75rem;
   margin: 1rem 0;
+  font-size: 0.875rem;
+}
+
+.loading, .no-users {
+  text-align: center;
+  padding: 2rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.875rem;
 } 
