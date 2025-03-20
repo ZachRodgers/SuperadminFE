@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import "./Customer.css";
 import Modal from "../components/Modal";
 
-const BASE_URL = "http://localhost:8085/ParkingWithParallel/parkinglots";
+const BASE_URL = "http://localhost:8085/ParkingWithParallel";
 const CURRENT_SUPERADMIN = "1";
 
 interface LotData {
@@ -22,11 +22,28 @@ interface LotData {
   isDeleted: boolean;
 }
 
+interface UserData {
+  userId: string;
+  name: string;
+  email: string;
+  phoneNo: string;
+  role: string;
+  isVerified: boolean;
+  isBanned: boolean;
+  bannedAt: string | null;
+  createdOn: string;
+  createdBy: string;
+  modifiedOn: string;
+  modifiedBy: string;
+  isDeleted: boolean;
+}
+
 const Customer: React.FC = () => {
   const { lotId } = useParams<{ lotId: string }>();
   const navigate = useNavigate();
 
   const [lot, setLot] = useState<LotData | null>(null);
+  const [owner, setOwner] = useState<UserData | null>(null);
   const [editableFields, setEditableFields] = useState<Partial<LotData>>({});
   const [editMode, setEditMode] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
@@ -36,19 +53,51 @@ const Customer: React.FC = () => {
 
   const fetchLot = async (id: string) => {
     try {
-      const response = await fetch(`${BASE_URL}/${id}`);
-      if (!response.ok) return;
-      const data: LotData = await response.json();
-      setLot(data);
+      // First get the full lot data
+      const fullLotResponse = await fetch(`${BASE_URL}/parkinglots/get-by-id/${id}`);
+      if (fullLotResponse.status === 404) {
+        setErrorMessage("Parking lot not found.");
+        return;
+      }
+      if (!fullLotResponse.ok) {
+        throw new Error(`HTTP error! status: ${fullLotResponse.status}`);
+      }
+      const fullLotData: LotData = await fullLotResponse.json();
+      if (!fullLotData) {
+        throw new Error('No data received');
+      }
+      console.log('Fetched full lot data:', fullLotData);
+      setLot(fullLotData);
       setEditableFields({
-        companyName: data.companyName,
-        address: data.address,
-        lotName: data.lotName,
-        ownerCustomerId: data.ownerCustomerId,
-        lotCapacity: data.lotCapacity,
+        companyName: fullLotData.companyName,
+        address: fullLotData.address,
+        lotName: fullLotData.lotName,
+        lotCapacity: fullLotData.lotCapacity,
       });
+      
+      // Fetch owner data separately with its own error handling
+      if (fullLotData.ownerCustomerId) {
+        try {
+          const ownerResponse = await fetch(`${BASE_URL}/users/get-user-by-id/${fullLotData.ownerCustomerId}`);
+          if (ownerResponse.ok) {
+            const ownerData: UserData = await ownerResponse.json();
+            if (ownerData) {
+              setOwner(ownerData);
+            }
+          } else {
+            console.warn(`Failed to fetch owner data: ${ownerResponse.status}`);
+          }
+        } catch (ownerError) {
+          console.warn("Error fetching owner data:", ownerError);
+        }
+      }
+      
+      setErrorMessage(null);
     } catch (error) {
       console.error("Error fetching lot:", error);
+      if (!lot) {
+        setErrorMessage("Failed to load lot data. Please try again.");
+      }
     }
   };
 
@@ -74,7 +123,7 @@ const Customer: React.FC = () => {
 
   const checkOwnerExists = async (userId: string): Promise<boolean> => {
     try {
-      const response = await fetch(`${BASE_URL.replace("parkinglots", "users")}/${userId}`);
+      const response = await fetch(`${BASE_URL}/users/get-user-by-id/${userId}`);
       return response.ok;
     } catch {
       return false;
@@ -83,44 +132,56 @@ const Customer: React.FC = () => {
 
   const saveChangesToDB = async () => {
     if (!lot) return;
-    if (!editableFields.companyName || !editableFields.address || !editableFields.lotName || !editableFields.ownerCustomerId) {
-      setErrorMessage("Fill out all required fields: Company Name, Address, Lot Name, Owner Customer ID.");
+    if (!editableFields.companyName || !editableFields.address || !editableFields.lotName) {
+      setErrorMessage("Fill out all required fields: Company Name, Address, Lot Name.");
       return;
     }
-    const ownerExists = await checkOwnerExists(editableFields.ownerCustomerId);
-    if (!ownerExists) {
-      setErrorMessage("Owner Customer ID does not exist. Please create the user first.");
-      return;
-    }
+    
+    // Create updated lot with all required fields
     const updatedLot: LotData = {
-      ...lot,
-      companyName: editableFields.companyName ?? lot.companyName,
-      address: editableFields.address ?? lot.address,
-      lotName: editableFields.lotName ?? lot.lotName,
-      ownerCustomerId: editableFields.ownerCustomerId ?? lot.ownerCustomerId,
+      lotId: lot.lotId,
+      companyName: editableFields.companyName,
+      address: editableFields.address,
+      lotName: editableFields.lotName,
       lotCapacity: editableFields.lotCapacity !== undefined ? editableFields.lotCapacity : lot.lotCapacity,
+      ownerCustomerId: lot.ownerCustomerId, // Use the original lot's owner ID
+      accountStatus: lot.accountStatus,
+      registryOn: lot.registryOn,
+      createdOn: lot.createdOn,
+      createdBy: lot.createdBy,
       modifiedOn: new Date().toISOString(),
       modifiedBy: CURRENT_SUPERADMIN,
+      isDeleted: lot.isDeleted,
     };
 
+    // Debug logging
+    console.log('Current lot data:', lot);
+    console.log('Editable fields:', editableFields);
+    console.log('Updated lot being sent:', updatedLot);
+
     try {
-      const response = await fetch(`${BASE_URL}/${lot.lotId}`, {
+      const response = await fetch(`${BASE_URL}/parkinglots/update/${lot.lotId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedLot),
       });
+      
       if (!response.ok) {
         const errorText = await response.text();
-        if (errorText.includes("violates foreign key constraint")) {
-          setErrorMessage("Invalid Owner Customer ID. Create the user first.");
+        console.log('Error response:', errorText);
+        if (response.status === 404) {
+          setErrorMessage("Parking lot not found.");
         } else if (errorText.includes("duplicate key value violates unique constraint")) {
-          setErrorMessage("Lot ID already in use.");
+          setErrorMessage("Lot name already in use.");
         } else {
           setErrorMessage(`Error updating lot: ${errorText}`);
         }
         return;
       }
-      setLot(updatedLot);
+      
+      const updatedData = await response.json();
+      console.log('Success response:', updatedData);
+      setLot(updatedData);
       setUnsavedChanges(false);
       setEditMode(false);
       setErrorMessage(null);
@@ -169,15 +230,27 @@ const Customer: React.FC = () => {
       modifiedBy: CURRENT_SUPERADMIN,
     };
     try {
-      const response = await fetch(`${BASE_URL}/${lot.lotId}`, {
+      const response = await fetch(`${BASE_URL}/parkinglots/update/${lot.lotId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedLot),
       });
-      if (!response.ok) return;
-      setLot(updatedLot);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        if (response.status === 404) {
+          setErrorMessage("Parking lot not found.");
+        } else {
+          setErrorMessage(`Error updating account status: ${errorText}`);
+        }
+        return;
+      }
+      
+      const updatedData = await response.json();
+      setLot(updatedData);
     } catch (error) {
       console.error("Error updating account status:", error);
+      setErrorMessage("Failed to update account status. Please try again.");
     }
   };
 
@@ -220,7 +293,6 @@ const Customer: React.FC = () => {
           <p>Lot Name:</p>
           <p>Lot ID:</p>
           <p>Address:</p>
-          <p>Owner Customer ID:</p>
           <p>Lot Capacity:</p>
           <p>Created On:</p>
           <p>Modified On:</p>
@@ -251,14 +323,6 @@ const Customer: React.FC = () => {
             onBlur={(e) => handleFieldChange("address", e.currentTarget.textContent || "")}
           >
             {editableFields.address ?? lot.address}
-          </p>
-          <p
-            contentEditable={editMode}
-            suppressContentEditableWarning={true}
-            className={editMode ? "editable-highlight" : ""}
-            onBlur={(e) => handleFieldChange("ownerCustomerId", e.currentTarget.textContent || "")}
-          >
-            {editableFields.ownerCustomerId ?? lot.ownerCustomerId}
           </p>
           <p
             contentEditable={editMode}
