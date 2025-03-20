@@ -50,6 +50,7 @@ const Customer: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const fetchLot = async (id: string) => {
     try {
@@ -220,15 +221,34 @@ const Customer: React.FC = () => {
     setErrorMessage(null);
   };
 
-  const toggleAccountStatus = async (newStatus: "paused" | "suspended") => {
+  const toggleAccountStatus = async (newStatus: "paused" | "archived") => {
     if (!lot) return;
-    const updatedStatus = lot.accountStatus === newStatus ? "active" : newStatus;
+    
+    // Determine the new status
+    const updatedStatus = lot.accountStatus.toLowerCase() === newStatus ? "active" : newStatus;
+    
+    // Create updated lot with all required fields
     const updatedLot: LotData = {
-      ...lot,
+      lotId: lot.lotId,
+      companyName: lot.companyName,
+      address: lot.address,
+      lotName: lot.lotName,
+      lotCapacity: lot.lotCapacity,
+      ownerCustomerId: lot.ownerCustomerId,
       accountStatus: updatedStatus,
+      registryOn: lot.registryOn,
+      createdOn: lot.createdOn,
+      createdBy: lot.createdBy,
       modifiedOn: new Date().toISOString(),
       modifiedBy: CURRENT_SUPERADMIN,
+      isDeleted: lot.isDeleted,
     };
+
+    // Debug logging
+    console.log('Current lot status:', lot.accountStatus);
+    console.log('New status:', updatedStatus);
+    console.log('Updated lot being sent:', updatedLot);
+
     try {
       const response = await fetch(`${BASE_URL}/parkinglots/update/${lot.lotId}`, {
         method: "PUT",
@@ -238,6 +258,7 @@ const Customer: React.FC = () => {
       
       if (!response.ok) {
         const errorText = await response.text();
+        console.log('Error response:', errorText);
         if (response.status === 404) {
           setErrorMessage("Parking lot not found.");
         } else {
@@ -247,7 +268,9 @@ const Customer: React.FC = () => {
       }
       
       const updatedData = await response.json();
+      console.log('Success response:', updatedData);
       setLot(updatedData);
+      setErrorMessage(null);
     } catch (error) {
       console.error("Error updating account status:", error);
       setErrorMessage("Failed to update account status. Please try again.");
@@ -266,6 +289,46 @@ const Customer: React.FC = () => {
   const formatDate = (isoDate: string) => {
     if (!isoDate) return "N/A";
     return new Date(isoDate).toLocaleString();
+  };
+
+  const handleDeleteLot = async () => {
+    if (!lot) return;
+    
+    try {
+      const response = await fetch(`${BASE_URL}/parkinglots/delete/${lot.lotId}`, {
+        method: "DELETE",
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('Error response:', errorText);
+        if (response.status === 404) {
+          setErrorMessage("Parking lot not found.");
+        } else {
+          setErrorMessage(`Error deleting lot: ${errorText}`);
+        }
+        return;
+      }
+      
+      // If deletion is successful, navigate to the dashboard
+      navigate('/dashboard');
+    } catch (error) {
+      console.error("Error deleting lot:", error);
+      setErrorMessage("Failed to delete lot. Please try again.");
+    }
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = () => {
+    handleDeleteLot();
+    setShowDeleteModal(false);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   if (!lot) {
@@ -342,10 +405,10 @@ const Customer: React.FC = () => {
         <button
           className={`action-button ${editMode ? "edit-active" : ""}`}
           onClick={toggleEditMode}
-          disabled={lot.accountStatus === "suspended"}
+          disabled={lot.accountStatus === "archived"}
           style={{
-            opacity: lot.accountStatus === "suspended" ? 0.5 : 1,
-            pointerEvents: lot.accountStatus === "suspended" ? "none" : "auto",
+            opacity: lot.accountStatus === "archived" ? 0.5 : 1,
+            pointerEvents: lot.accountStatus === "archived" ? "none" : "auto",
           }}
         >
           <img
@@ -359,10 +422,10 @@ const Customer: React.FC = () => {
         <button
           className={`action-button ${lot.accountStatus === "paused" ? "edit-active" : ""}`}
           onClick={() => toggleAccountStatus("paused")}
-          disabled={editMode || lot.accountStatus === "suspended"}
+          disabled={editMode || lot.accountStatus === "archived"}
           style={{
-            opacity: editMode || lot.accountStatus === "suspended" ? 0.5 : 1,
-            pointerEvents: editMode || lot.accountStatus === "suspended" ? "none" : "auto",
+            opacity: editMode || lot.accountStatus === "archived" ? 0.5 : 1,
+            pointerEvents: editMode || lot.accountStatus === "archived" ? "none" : "auto",
           }}
         >
           <img
@@ -374,18 +437,33 @@ const Customer: React.FC = () => {
           <span>{lot.accountStatus === "paused" ? "Paused" : "Pause"}</span>
         </button>
         <button
-          className={`action-button ${lot.accountStatus === "suspended" ? "edit-active" : ""}`}
-          onClick={() => toggleAccountStatus("suspended")}
+          className={`action-button ${lot.accountStatus === "archived" ? "edit-active" : ""}`}
+          onClick={() => toggleAccountStatus("archived")}
           style={{ opacity: 1, pointerEvents: "auto" }}
         >
           <img
             className="button-icon"
-            src={lot.accountStatus === "suspended" ? "/assets/SuspendInverted.svg" : "/assets/Suspend.svg"}
-            alt="Suspend Icon"
+            src={lot.accountStatus === "archived" ? "/assets/ArchiveInverted.svg" : "/assets/Archive.svg"}
+            alt="Archive Icon"
           />
-          <img className="button-icon-hover" src="/assets/SuspendInverted.svg" alt="Suspend Icon Hover" />
-          <span>{lot.accountStatus === "suspended" ? "Suspended" : "Suspend"}</span>
+          <img className="button-icon-hover" src="/assets/ArchiveInverted.svg" alt="Archive Icon Hover" />
+          <span>{lot.accountStatus === "archived" ? "Archived" : "Archive"}</span>
         </button>
+        {lot.accountStatus === "archived" && (
+          <button
+            className="action-button"
+            onClick={confirmDelete}
+            style={{ opacity: 1, pointerEvents: "auto" }}
+          >
+            <img
+              className="button-icon"
+              src="/assets/Delete.svg"
+              alt="Delete Icon"
+            />
+            <img className="button-icon-hover" src="/assets/DeleteInverted.svg" alt="Delete Icon Hover" />
+            <span>Delete</span>
+          </button>
+        )}
       </div>
 
       {showModal && (
@@ -396,6 +474,17 @@ const Customer: React.FC = () => {
           onCancel={handleCancelChanges}
           confirmText="Save Changes"
           cancelText="Cancel Changes"
+        />
+      )}
+
+      {showDeleteModal && (
+        <Modal
+          title="Confirm Deletion"
+          message="Are you sure you want to delete this parking lot? This action cannot be undone."
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          confirmText="Delete"
+          cancelText="Cancel"
         />
       )}
     </div>
