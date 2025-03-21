@@ -258,6 +258,14 @@ h1, h2 {
   gap: 4px;
 }
 
+.Badge .user-info {
+  cursor: pointer;
+}
+
+.Badge .user-info:hover {
+  text-decoration: underline;
+}
+
 .delete-badge-btn {
   background: none;
   border: none;
@@ -273,11 +281,13 @@ h1, h2 {
   border-radius: 50%;
   transition: all 0.2s ease;
   font-weight: 400;
+  text-decoration: none;
 }
 
 .delete-badge-btn:hover {
   background-color: rgba(0, 0, 0, 0.1);
   color: #ffffff;
+  text-decoration: none;
 }
 
 .change-button {
