@@ -208,9 +208,7 @@ public ResponseEntity<Users> updateUser(@PathVariable("id") String userId, @Vali
               disabled={isLoading}
             >
               <option value="SuperAdmin">Super Admin</option>
-              <option value="Owner">Owner</option>
               <option value="Operator">Operator</option>
-              <option value="Staff">Staff</option>
             </select>
           </div>
         </div>
