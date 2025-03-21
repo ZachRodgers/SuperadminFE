@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import "./Customer.css";
 import Modal from "../components/Modal";
 import AddUser from "../components/AddUser";
+import EditUser from "../components/EditUser";
 
 const BASE_URL = "http://localhost:8085/ParkingWithParallel";
 const CURRENT_SUPERADMIN = "1";
@@ -57,6 +58,7 @@ const Customer: React.FC = () => {
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [addUserType, setAddUserType] = useState<'operator' | 'staff' | 'owner' | null>(null);
   const [showDeleteUserModal, setShowDeleteUserModal] = useState<{ type: 'operator' | 'staff', userId: string } | null>(null);
+  const [editingUser, setEditingUser] = useState<UserData | null>(null);
 
   const fetchLot = async (id: string) => {
     try {
@@ -455,6 +457,21 @@ const Customer: React.FC = () => {
     }
   };
 
+  const handleEditUser = (user: UserData) => {
+    if (editMode) {
+      setEditingUser(user);
+    }
+  };
+
+  const handleUserUpdated = () => {
+    if (lotId) {
+      fetchLot(lotId);
+      fetchOperators(lotId);
+      fetchStaff(lotId);
+    }
+    setEditingUser(null);
+  };
+
   if (!lot) {
     return (
       <div className="customer-page">
@@ -533,7 +550,12 @@ const Customer: React.FC = () => {
               {owner ? (
                 <div className="owner-container">
                   <span className={editMode ? "Badge" : "NoBadge"}>
-                    {formatUserId(owner.userId)} ({owner.email})
+                    <span 
+                      className="user-info"
+                      onClick={() => handleEditUser(owner)}
+                    >
+                      {formatUserId(owner.userId)} ({owner.email})
+                    </span>
                   </span>
                   {editMode && (
                     <button 
@@ -556,11 +578,19 @@ const Customer: React.FC = () => {
                 {operators.map((operator) => (
                   <p key={operator.userId}>
                     <span className={editMode ? "Badge" : "NoBadge"}>
-                      {formatUserId(operator.userId)} ({operator.email})
+                      <span 
+                        className="user-info"
+                        onClick={() => handleEditUser(operator)}
+                      >
+                        {formatUserId(operator.userId)} ({operator.email})
+                      </span>
                       {editMode && (
                         <button 
                           className="delete-badge-btn"
-                          onClick={() => setShowDeleteUserModal({ type: 'operator', userId: operator.userId })}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteUserModal({ type: 'operator', userId: operator.userId });
+                          }}
                         >
                           ×
                         </button>
@@ -588,11 +618,19 @@ const Customer: React.FC = () => {
                 {staff.map((staffMember) => (
                   <p key={staffMember.userId}>
                     <span className={editMode ? "Badge" : "NoBadge"}>
-                      {formatUserId(staffMember.userId)} ({staffMember.email})
+                      <span 
+                        className="user-info"
+                        onClick={() => handleEditUser(staffMember)}
+                      >
+                        {formatUserId(staffMember.userId)} ({staffMember.email})
+                      </span>
                       {editMode && (
                         <button 
                           className="delete-badge-btn"
-                          onClick={() => setShowDeleteUserModal({ type: 'staff', userId: staffMember.userId })}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteUserModal({ type: 'staff', userId: staffMember.userId });
+                          }}
                         >
                           ×
                         </button>
@@ -727,6 +765,15 @@ const Customer: React.FC = () => {
           onCancel={() => setShowDeleteUserModal(null)}
           confirmText="Remove"
           cancelText="Cancel"
+        />
+      )}
+
+      {editingUser && (
+        <EditUser
+          isOpen={true}
+          onClose={() => setEditingUser(null)}
+          onSave={handleUserUpdated}
+          user={editingUser}
         />
       )}
     </div>
