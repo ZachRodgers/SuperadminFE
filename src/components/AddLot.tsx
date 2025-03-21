@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import AddUser from './AddUser';
 
 interface ExistingLot {
   lotID: string;
+}
+
+interface User {
+  userId: string;
+  name: string;
+  email: string;
+  isDeleted: boolean;
 }
 
 interface AddLotProps {
@@ -13,6 +21,33 @@ interface AddLotProps {
 const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) => {
   // Optionally, you can try to prefill with the current user's email if stored in localStorage.
   const currentUserEmail = localStorage.getItem('userEmail') || '';
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+
+  // Fetch users on mount
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // Fetch users from backend
+  const fetchUsers = async () => {
+    try {
+      setIsLoadingUsers(true);
+      const response = await fetch('http://localhost:8085/ParkingWithParallel/users/get-all-users');
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      const data = await response.json();
+      // Filter out deleted users
+      const activeUsers = data.filter((user: User) => !user.isDeleted);
+      setUsers(activeUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
 
   // 1) Utility to compute the next numeric lot ID
   const computeNextLotId = () => {
@@ -144,7 +179,7 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
         if (errorText.includes('foreign key')) {
           alert('Owner Customer ID is not present in users. Please create that user first.');
         } else if (errorText.includes('duplicate key value violates unique constraint')) {
-          alert('Lot ID or Lot Name is already in use. Please choose a different one.');
+          alert('Lot Name is already in use. Please choose a different one.');
         } else {
           alert('Error creating lot:\n' + errorText);
         }
@@ -157,6 +192,18 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
       console.error(error);
       alert('Error creating lot. Check console for details.');
     }
+  };
+
+  // Handle user creation from AddUser modal
+  const handleUserCreated = (userId: string) => {
+    setShowAddUser(false);
+    fetchUsers(); // Refresh the users list
+    // Get the user's email and set it as owner email
+    getOwnerUserIdByEmail(userId).then(email => {
+      if (email) {
+        setLotData(prev => ({ ...prev, ownerEmail: email }));
+      }
+    });
   };
 
   return (
@@ -188,13 +235,22 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
           placeholder='Enter the lot name'
         />
 
-        <label>Owner Email:</label>
-        <input
-          type="text"
+        <div className="owner-email-section">
+          <label>Owner Email:</label><button className="addlot-new-user-button" onClick={() => setShowAddUser(true)}>New User</button>
+        </div>
+        <select
           value={lotData.ownerEmail}
           onChange={(e) => setLotData({ ...lotData, ownerEmail: e.target.value })}
-          placeholder='Enter the owners account email'
-        />
+          disabled={isLoadingUsers}
+          className="user-select"
+        >
+          <option value="">Select an owner...</option>
+          {users.map((user) => (
+            <option key={user.userId} value={user.email}>
+              {user.email} ({user.name})
+            </option>
+          ))}
+        </select>
 
         <label>Lot Capacity:</label>
         <input
@@ -209,7 +265,7 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
         />
 
         <div className="button-group" style={{ marginTop: '20px' }}>
-          <button className="submit-button" onClick={handleSubmit} style={{ marginRight: '10px' }}>
+          <button className="confirm-button" onClick={handleSubmit} style={{ marginRight: '10px' }}>
             Save
           </button>
           <button className="cancel-button" onClick={onClose}>
@@ -217,6 +273,19 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
           </button>
         </div>
       </div>
+
+      {showAddUser && (
+        <AddUser
+          isOpen={showAddUser}
+          onClose={() => setShowAddUser(false)}
+          onConfirm={handleUserCreated}
+          type="owner"
+          currentOwnerId=""
+          currentOperators={[]}
+          currentStaff={[]}
+          startInCreateMode={true}
+        />
+      )}
     </div>
   );
 };

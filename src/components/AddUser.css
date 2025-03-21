@@ -36,6 +36,8 @@
   color: white;
   font-size: 1.5rem;
   font-weight: 600;
+  margin-bottom: 20px;
+  margin-top: 20px;
 }
 
 .new-user-button {
@@ -129,8 +131,8 @@
 }
 
 .form-group label {
-  font-size: 0.9rem;
-  color: #ccc;
+  font-size: 16px;
+  color: #ffffff;
   font-weight: 500;
 }
 
@@ -184,7 +186,7 @@
   padding: 15px 0px;
   font-size: 16px;
   border: none;
-  border-radius: 30px;
+  border-radius: 100px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -324,3 +326,23 @@
   background-color: #991b1b;
   color: #fee2e2;
 } 
+
+.addlot-new-user-button {
+  background-color: transparent;
+  color: white;
+  padding: 0px 0px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  max-width: 100px;
+  text-decoration: underline;
+  opacity: 0.5;
+  margin: 5px 0px;
+}
+
+.addlot-new-user-button:hover {
+  opacity: 1;
+  background-color: transparent;
+  color: white;
+}

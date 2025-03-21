@@ -31,14 +31,15 @@ interface AddUserProps {
   type: 'operator' | 'staff' | 'owner';
   currentOperators: User[];
   currentStaff: User[];
+  startInCreateMode?: boolean;
 }
 
-const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOwnerId, type, currentOperators, currentStaff }) => {
+const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOwnerId, type, currentOperators, currentStaff, startInCreateMode = false }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [isCreatingNew, setIsCreatingNew] = useState(startInCreateMode);
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -107,7 +108,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
     if (isOpen) {
       fetchUsers();
       setSelectedUserId('');
-      setIsCreatingNew(false);
+      setIsCreatingNew(startInCreateMode);
       setNewUser({
         name: '',
         email: '',
@@ -116,7 +117,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
         role: type === 'operator' ? 'Operator' : type === 'staff' ? 'Staff' : 'Owner'
       });
     }
-  }, [isOpen, currentOwnerId, type, currentOperators, currentStaff]);
+  }, [isOpen, currentOwnerId, type, currentOperators, currentStaff, startInCreateMode]);
 
   const handleCreateUser = async () => {
     try {
@@ -160,6 +161,9 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
   };
 
   const getTitle = () => {
+    if (startInCreateMode) {
+      return 'Create User';
+    }
     if (isCreatingNew) {
       return 'New User';
     }
@@ -176,6 +180,9 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
   };
 
   const getConfirmButtonText = () => {
+    if (startInCreateMode) {
+      return 'Create User';
+    }
     switch (type) {
       case 'operator':
         return 'Add Operator';
@@ -195,18 +202,20 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
       <div className="modal-content">
         <div className="modal-header">
           <h2>{getTitle()}</h2>
-          <button 
-            className="new-user-button"
-            onClick={() => setIsCreatingNew(!isCreatingNew)}
-          >
-            {isCreatingNew ? 'Select Existing' : '+ New User'}
-          </button>
+          {!startInCreateMode && (
+            <button 
+              className="new-user-button"
+              onClick={() => setIsCreatingNew(!isCreatingNew)}
+            >
+              {isCreatingNew ? 'Select Existing' : '+ New User'}
+            </button>
+          )}
         </div>
         
         {isCreatingNew ? (
           <div className="new-user-form">
             <div className="form-group">
-              <label>Name</label>
+              <label>Name:</label>
               <input
                 type="text"
                 value={newUser.name}
@@ -216,7 +225,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
               />
             </div>
             <div className="form-group">
-              <label>Email</label>
+              <label>Email:</label>
               <input
                 type="email"
                 value={newUser.email}
@@ -230,7 +239,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
               {emailError && <div className="error">{emailError}</div>}
             </div>
             <div className="form-group">
-              <label>Password</label>
+              <label>Password:</label>
               <input
                 type="password"
                 value={newUser.password}
@@ -240,7 +249,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
               />
             </div>
             <div className="form-group">
-              <label>Phone Number</label>
+              <label>Phone Number:</label>
               <input
                 type="tel"
                 value={newUser.phoneNo}
@@ -249,7 +258,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
               />
             </div>
             <div className="form-group">
-              <label>Role</label>
+              <label>Role:</label>
               <select
                 value={newUser.role}
                 onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
