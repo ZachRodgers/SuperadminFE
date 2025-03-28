@@ -34,7 +34,7 @@ interface SortConfig {
 
 const ALPR_API_URL = 'http://localhost:8085/ParkingWithParallel/alpr';
 const DEVICES_API_URL = 'http://localhost:8085/ParkingWithParallel/devices';
-const refreshInterval = 10000;
+const refreshInterval = 10000000;
 
 const VehicleLog: React.FC = () => {
   const { lotId } = useParams<{ lotId: string }>();
@@ -70,7 +70,7 @@ const VehicleLog: React.FC = () => {
       if (!response.ok) throw new Error('Error fetching ALPR data');
       const data: AlprData[] = await response.json();
       // Sort by timestamp (newest first)
-      const sortedEntries = data.sort((a, b) => 
+      const sortedEntries = data.sort((a, b) =>
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
       setAlprEntries(sortedEntries);
@@ -186,10 +186,10 @@ const VehicleLog: React.FC = () => {
     // If no time, use now
     const now = new Date();
     // Format the date to include timezone offset
-    const finalTimestamp = timestamp 
+    const finalTimestamp = timestamp
       ? new Date(timestamp).toISOString()
       : now.toISOString();
-    
+
     // Get the first available device for this lot
     const chosenDevice = devices.find(d => d.lot.lotId === lotId);
     if (!chosenDevice) {
@@ -222,7 +222,7 @@ const VehicleLog: React.FC = () => {
           deviceTemp: 0,
         }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         if (errorData.message?.includes('DEVICE00002')) {
@@ -234,7 +234,7 @@ const VehicleLog: React.FC = () => {
         }
         return;
       }
-      
+
       fetchAlprData();
       setShowModal(false);
       setNewEntry({ plateNumber: '', timestamp: '', status: 'Enter' });
@@ -445,7 +445,7 @@ const VehicleLog: React.FC = () => {
           <div className="modal-content">
             <h2>Clear All ALPR Data</h2>
             <p>Are you sure you want to delete all ALPR data for this lot? This action cannot be undone.</p>
-            
+
             <div className="button-group">
               <button className="submit-button" onClick={handleClearAll}>
                 Clear All

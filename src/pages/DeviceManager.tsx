@@ -11,8 +11,8 @@ const DEVICES_CREATE_URL = `${DEVICES_API_URL}/create`;
 const DEVICES_DELETE_URL = `${DEVICES_API_URL}/permanent-delete`;
 
 // Refresh bar constants
-const REFRESH_INTERVAL_MS = 10000; // 10 seconds for full auto-refresh
-const PROGRESS_UPDATE_MS = 100;    // update progress bar every 100ms
+const REFRESH_INTERVAL_MS = 10000000;
+const PROGRESS_UPDATE_MS = 10000;    //10 seconds update progress bar every 100ms
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 
 // Matches your /devices schema from Swagger
@@ -196,7 +196,7 @@ const DeviceManager: React.FC = () => {
       // Add back the prefix for the backend
       const deviceIdWithPrefix = `PWP-D-${deviceId}`;
       // Use the permanent delete endpoint with the correct path variable name
-      const resp = await fetch(`${DEVICES_DELETE_URL}/${deviceIdWithPrefix}`, { 
+      const resp = await fetch(`${DEVICES_DELETE_URL}/${deviceIdWithPrefix}`, {
         method: 'DELETE'
       });
       if (!resp.ok) {
@@ -314,49 +314,49 @@ const DeviceManager: React.FC = () => {
         {devices
           .sort((a, b) => formatDeviceId(a.deviceId).localeCompare(formatDeviceId(b.deviceId)))
           .map((device, idx) => {
-          const parsed = parseDevice(device);
-          return (
-            <div
-              key={parsed.id}
-              className={`device ${parsed.colorClass}`}
-              style={{
-                backgroundColor: idx % 2 === 0 ? '#363941' : '#2B2E35',
-              }}
-            >
-              <div className="device-info">
-                <h2>{parsed.id}</h2>
-                <p className="status">{parsed.statusText}</p>
-                <p className="updated">{parsed.updatedText}</p>
-              </div>
-              <div className="device-actions">
-                <div className="action">
-                  <button disabled={!parsed.isOnline}>
-                    <img src="/assets/power.svg" alt="Shutdown Icon" />
-                  </button>
-                  <span>Shutdown</span>
+            const parsed = parseDevice(device);
+            return (
+              <div
+                key={parsed.id}
+                className={`device ${parsed.colorClass}`}
+                style={{
+                  backgroundColor: idx % 2 === 0 ? '#363941' : '#2B2E35',
+                }}
+              >
+                <div className="device-info">
+                  <h2>{parsed.id}</h2>
+                  <p className="status">{parsed.statusText}</p>
+                  <p className="updated">{parsed.updatedText}</p>
                 </div>
-                <div className="action">
-                  <button disabled={!parsed.isOnline}>
-                    <img src="/assets/reboot.svg" alt="Reboot Icon" />
+                <div className="device-actions">
+                  <div className="action">
+                    <button disabled={!parsed.isOnline}>
+                      <img src="/assets/power.svg" alt="Shutdown Icon" />
+                    </button>
+                    <span>Shutdown</span>
+                  </div>
+                  <div className="action">
+                    <button disabled={!parsed.isOnline}>
+                      <img src="/assets/reboot.svg" alt="Reboot Icon" />
+                    </button>
+                    <span>Reboot</span>
+                  </div>
+                </div>
+                <div className="network-info">
+                  <p>
+                    Network
+                    <br />
+                    {parsed.network}
+                  </p>
+                </div>
+                <div className="remove-device">
+                  <button onClick={() => openRemoveModal(parsed.id)}>
+                    <img src="/assets/Minus.svg" alt="Remove Device" />
                   </button>
-                  <span>Reboot</span>
                 </div>
               </div>
-              <div className="network-info">
-                <p>
-                  Network
-                  <br />
-                  {parsed.network}
-                </p>
-              </div>
-              <div className="remove-device">
-                <button onClick={() => openRemoveModal(parsed.id)}>
-                  <img src="/assets/Minus.svg" alt="Remove Device" />
-                </button>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
 
         {/* "Add Device" tile */}
         <div
