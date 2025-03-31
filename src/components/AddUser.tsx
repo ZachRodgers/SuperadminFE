@@ -40,6 +40,8 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(startInCreateMode);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processStep, setProcessStep] = useState<string>('');
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
@@ -140,10 +142,14 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
 
   const handleCreateUser = async () => {
     try {
+      setIsProcessing(true);
+      setProcessStep('Creating User...');
+
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(newUser.email)) {
         setEmailError('Please enter a valid email address');
+        setIsProcessing(false);
         return;
       }
 
@@ -165,17 +171,28 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
         const errorData = await response.text();
         if (errorData === 'USER00002') {
           setEmailError('A user with this email already exists');
+          setIsProcessing(false);
           return;
         }
         throw new Error(`Failed to create user: ${errorData}`);
       }
 
+      setProcessStep('User Created! Sending Email...');
       const createdUser = await response.json();
+
+      // Wait a moment to show the email sending state
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      setProcessStep('Complete!');
       onConfirm(createdUser.userId);
+
+      // Wait a moment to show completion before closing
+      await new Promise(resolve => setTimeout(resolve, 1000));
       onClose();
     } catch (err) {
       console.error('Error creating user:', err);
       setError(err instanceof Error ? err.message : 'Failed to create user');
+      setIsProcessing(false);
     }
   };
 
@@ -231,103 +248,111 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
           )}
         </div>
 
-        {isCreatingNew ? (
-          <div className="new-user-form">
-            <div className="form-group">
-              <label>Name:</label>
-              <input
-                type="text"
-                value={newUser.name}
-                onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                placeholder="Enter name"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Email:</label>
-              <input
-                type="email"
-                value={newUser.email}
-                onChange={(e) => {
-                  setNewUser({ ...newUser, email: e.target.value });
-                  setEmailError(null);
-                }}
-                placeholder="Enter email"
-                required
-              />
-              {emailError && <div className="error">{emailError}</div>}
-            </div>
-            <div className="form-group">
-              <label>Temp Password:</label>
-              <input
-                type="text"
-                value={newUser.password}
-                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                placeholder="Enter temp password"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>Phone Number:</label>
-              <input
-                type="tel"
-                value={newUser.phoneNo}
-                onChange={(e) => setNewUser({ ...newUser, phoneNo: e.target.value })}
-                placeholder="Enter phone number (optional)"
-              />
-            </div>
-            <div className="form-group">
-              <label>Role:</label>
-              <select
-                value={newUser.role}
-                onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-              >
-                <option value="Operator">Operator</option>
-                <option value="SuperAdmin">Super Admin</option>
-
-              </select>
-            </div>
+        {isProcessing ? (
+          <div className="processing-container">
+            <div className="spinner"></div>
+            <p>{processStep}</p>
           </div>
         ) : (
-          <div className="select-container">
-            <select
-              value={selectedUserId}
-              onChange={(e) => setSelectedUserId(e.target.value)}
-              className="user-select"
-            >
-              <option value="">Select a user...</option>
-              {users.map((user) => {
-                // Format the user ID by removing the prefix
-                const formattedUserId = user.userId.replace('PWP-U-', '');
-                return (
-                  <option key={user.userId} value={user.userId}>
-                    {formattedUserId} ({user.email}) {user.name}
-                    {user.isVerified ? ' ✓' : ''}
-                    {user.isBanned ? ' 🚫' : ''}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+          <>
+            {isCreatingNew ? (
+              <div className="new-user-form">
+                <div className="form-group">
+                  <label>Name:</label>
+                  <input
+                    type="text"
+                    value={newUser.name}
+                    onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                    placeholder="Enter name"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email:</label>
+                  <input
+                    type="email"
+                    value={newUser.email}
+                    onChange={(e) => {
+                      setNewUser({ ...newUser, email: e.target.value });
+                      setEmailError(null);
+                    }}
+                    placeholder="Enter email"
+                    required
+                  />
+                  {emailError && <div className="error">{emailError}</div>}
+                </div>
+                <div className="form-group">
+                  <label>Temp Password:</label>
+                  <input
+                    type="text"
+                    value={newUser.password}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                    placeholder="Enter temp password"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Phone Number:</label>
+                  <input
+                    type="tel"
+                    value={newUser.phoneNo}
+                    onChange={(e) => setNewUser({ ...newUser, phoneNo: e.target.value })}
+                    placeholder="Enter phone number (optional)"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Role:</label>
+                  <select
+                    value={newUser.role}
+                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                  >
+                    <option value="Operator">Operator</option>
+                    <option value="SuperAdmin">Super Admin</option>
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div className="select-container">
+                <select
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="user-select"
+                >
+                  <option value="">Select a user...</option>
+                  {users.map((user) => {
+                    // Format the user ID by removing the prefix
+                    const formattedUserId = user.userId.replace('PWP-U-', '');
+                    return (
+                      <option key={user.userId} value={user.userId}>
+                        {formattedUserId} ({user.email}) {user.name}
+                        {user.isVerified ? ' ✓' : ''}
+                        {user.isBanned ? ' 🚫' : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+
+            {error && <div className="error">{error}</div>}
+
+            <div className="button-container">
+              <button
+                className="confirm-button"
+                onClick={isCreatingNew ? handleCreateUser : () => selectedUserId && onConfirm(selectedUserId)}
+                disabled={isCreatingNew ?
+                  !newUser.name || !newUser.email || !newUser.password || isProcessing :
+                  !selectedUserId
+                }
+              >
+                {getConfirmButtonText()}
+              </button>
+              <button className="cancel-button" onClick={onClose} disabled={isProcessing}>
+                Cancel
+              </button>
+            </div>
+          </>
         )}
-
-        {error && <div className="error">{error}</div>}
-
-        <div className="button-container">
-          <button
-            className="confirm-button"
-            onClick={isCreatingNew ? handleCreateUser : () => selectedUserId && onConfirm(selectedUserId)}
-            disabled={isCreatingNew ?
-              !newUser.name || !newUser.email || !newUser.password :
-              !selectedUserId
-            }
-          >
-            {getConfirmButtonText()}
-          </button>
-          <button className="cancel-button" onClick={onClose}>
-            Cancel
-          </button>
-        </div>
       </div>
     </div>
   );
