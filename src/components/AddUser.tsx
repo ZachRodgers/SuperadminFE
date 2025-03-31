@@ -273,7 +273,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
                 type="tel"
                 value={newUser.phoneNo}
                 onChange={(e) => setNewUser({ ...newUser, phoneNo: e.target.value })}
-                placeholder="Enter phone number"
+                placeholder="Enter phone number (optional)"
               />
             </div>
             <div className="form-group">
@@ -318,7 +318,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
             className="confirm-button"
             onClick={isCreatingNew ? handleCreateUser : () => selectedUserId && onConfirm(selectedUserId)}
             disabled={isCreatingNew ?
-              !newUser.name || !newUser.email || !newUser.password || !newUser.phoneNo :
+              !newUser.name || !newUser.email || !newUser.password :
               !selectedUserId
             }
           >
