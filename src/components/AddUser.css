@@ -346,3 +346,12 @@
   background-color: transparent;
   color: white;
 }
+
+/* Remove these styles as they're no longer needed */
+.password-input-container,
+.password-input-container input,
+.regenerate-password,
+.regenerate-password:hover,
+.password-hint {
+  display: none;
+}

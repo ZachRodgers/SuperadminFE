@@ -49,6 +49,25 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
   });
   const [emailError, setEmailError] = useState<string | null>(null);
 
+  const generateTempPassword = () => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    let password = '';
+
+    // Generate 3 random uppercase letters
+    for (let i = 0; i < 3; i++) {
+      password += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+
+    // Generate 3 random numbers
+    for (let i = 0; i < 3; i++) {
+      password += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    }
+
+    // Shuffle the password
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -59,7 +78,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
         }
         const data = await response.json();
         console.log('Raw response:', data);
-        
+
         // Map the backend response to our User interface
         const mappedUsers = data.map((user: UserResponse) => {
           console.log('Processing user:', user);
@@ -95,7 +114,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
 
           return true;
         });
-        
+
         setUsers(filteredUsers);
       } catch (err) {
         console.error('Error fetching users:', err);
@@ -112,7 +131,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
       setNewUser({
         name: '',
         email: '',
-        password: '',
+        password: generateTempPassword(),
         phoneNo: '',
         role: type === 'operator' ? 'Operator' : type === 'staff' ? 'Staff' : 'Owner'
       });
@@ -203,7 +222,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
         <div className="modal-header">
           <h2>{getTitle()}</h2>
           {!startInCreateMode && (
-            <button 
+            <button
               className="new-user-button"
               onClick={() => setIsCreatingNew(!isCreatingNew)}
             >
@@ -211,7 +230,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
             </button>
           )}
         </div>
-        
+
         {isCreatingNew ? (
           <div className="new-user-form">
             <div className="form-group">
@@ -239,12 +258,12 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
               {emailError && <div className="error">{emailError}</div>}
             </div>
             <div className="form-group">
-              <label>Password:</label>
+              <label>Temp Password:</label>
               <input
-                type="password"
+                type="text"
                 value={newUser.password}
                 onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                placeholder="Enter password"
+                placeholder="Enter temp password"
                 required
               />
             </div>
@@ -263,8 +282,9 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
                 value={newUser.role}
                 onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
               >
-                <option value="SuperAdmin">Super Admin</option>
                 <option value="Operator">Operator</option>
+                <option value="SuperAdmin">Super Admin</option>
+
               </select>
             </div>
           </div>
@@ -292,12 +312,12 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
         )}
 
         {error && <div className="error">{error}</div>}
-        
+
         <div className="button-container">
-          <button 
+          <button
             className="confirm-button"
             onClick={isCreatingNew ? handleCreateUser : () => selectedUserId && onConfirm(selectedUserId)}
-            disabled={isCreatingNew ? 
+            disabled={isCreatingNew ?
               !newUser.name || !newUser.email || !newUser.password || !newUser.phoneNo :
               !selectedUserId
             }
