@@ -54,6 +54,7 @@ const Dashboard: React.FC = () => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'lotID', direction: 'ascending' });
   const [isNotificationsVisible, setNotificationsVisible] = useState(false);
   const [showAddLotModal, setShowAddLotModal] = useState(false);
+  const [showArchivedLots, setShowArchivedLots] = useState(false);
 
   const navigate = useNavigate();
   const popupRef = useRef<HTMLDivElement | null>(null);
@@ -170,13 +171,23 @@ const Dashboard: React.FC = () => {
   const filteredLots = lots
     .filter((lot) => {
       const normalizedSearch = normalizeString(searchQuery);
+
+      // Show only archived lots when the checkbox is checked
+      if (showArchivedLots) {
+        return lot.accountStatus.toLowerCase() === 'archived' &&
+          normalizeString(`${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate}`).includes(normalizedSearch);
+      }
+
+      // Default behavior: filter out suspended and archived lots
       if (normalizedSearch.includes('suspended')) {
         return normalizeString(
           `${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate} ${lot.accountStatus}`
         ).includes(normalizedSearch);
       }
+
       return (
         lot.accountStatus !== 'suspended' &&
+        lot.accountStatus.toLowerCase() !== 'archived' &&
         normalizeString(`${lot.lotID} ${lot.companyName} ${lot.location} ${lot.purchaseDate}`).includes(normalizedSearch)
       );
     })
@@ -224,14 +235,30 @@ const Dashboard: React.FC = () => {
 
       <div className="dashboard-content">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-          <div className="search-bar" style={{ flex: '4' }}>
+          <div className="search-bar" style={{ flex: '4', display: 'flex', alignItems: 'center' }}>
             <img src="/assets/SearchBarIcon.svg" alt="Search" />
             <input
               type="text"
               placeholder="Search LotID, Company Name, Purchase Date or Location"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ flex: 1 }}
             />
+            <div className="archive-checkbox">
+              <label className="custom-checkbox">
+                <input
+                  type="checkbox"
+                  id="showArchived"
+                  checked={showArchivedLots}
+                  onChange={() => setShowArchivedLots(!showArchivedLots)}
+                  className="hidden-checkbox"
+                />
+                <span
+                  className={`checkbox-styler ${showArchivedLots ? 'checked' : ''}`}
+                ></span>
+                <span className="checkbox-label">Show Archived</span>
+              </label>
+            </div>
           </div>
           <button className="addlot-button" onClick={() => setShowAddLotModal(true)}>
             Add Lot
