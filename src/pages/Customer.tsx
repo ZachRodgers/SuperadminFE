@@ -83,7 +83,7 @@ const Customer: React.FC = () => {
         lotName: fullLotData.lotName,
         lotCapacity: fullLotData.lotCapacity,
       });
-      
+
       // Fetch owner data separately with its own error handling
       if (fullLotData.ownerCustomerId) {
         try {
@@ -100,7 +100,7 @@ const Customer: React.FC = () => {
           console.warn("Error fetching owner data:", ownerError);
         }
       }
-      
+
       setErrorMessage(null);
     } catch (error) {
       console.error("Error fetching lot:", error);
@@ -175,7 +175,7 @@ const Customer: React.FC = () => {
       setErrorMessage("Fill out all required fields: Company Name, Address, Lot Name.");
       return;
     }
-    
+
     // Create updated lot with all required fields
     const updatedLot: LotData = {
       lotId: lot.lotId,
@@ -204,7 +204,7 @@ const Customer: React.FC = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedLot),
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.log('Error response:', errorText);
@@ -217,7 +217,7 @@ const Customer: React.FC = () => {
         }
         return;
       }
-      
+
       const updatedData = await response.json();
       console.log('Success response:', updatedData);
       setLot(updatedData);
@@ -261,10 +261,10 @@ const Customer: React.FC = () => {
 
   const toggleAccountStatus = async (newStatus: "paused" | "archived") => {
     if (!lot) return;
-    
+
     // Determine the new status
     const updatedStatus = lot.accountStatus.toLowerCase() === newStatus ? "active" : newStatus;
-    
+
     // Create updated lot with all required fields
     const updatedLot: LotData = {
       lotId: lot.lotId,
@@ -293,7 +293,7 @@ const Customer: React.FC = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedLot),
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.log('Error response:', errorText);
@@ -304,7 +304,7 @@ const Customer: React.FC = () => {
         }
         return;
       }
-      
+
       const updatedData = await response.json();
       console.log('Success response:', updatedData);
       setLot(updatedData);
@@ -331,12 +331,12 @@ const Customer: React.FC = () => {
 
   const handleDeleteLot = async () => {
     if (!lot) return;
-    
+
     try {
       const response = await fetch(`${BASE_URL}/parkinglots/delete/${lot.lotId}`, {
         method: "DELETE",
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.log('Error response:', errorText);
@@ -347,7 +347,7 @@ const Customer: React.FC = () => {
         }
         return;
       }
-      
+
       // If deletion is successful, navigate to the dashboard
       navigate('/dashboard');
     } catch (error) {
@@ -385,7 +385,7 @@ const Customer: React.FC = () => {
     if (addUserType === 'owner') {
       endpoint = `${BASE_URL}/parkinglots/change-owner/${lot.lotId}/${userId}`;
     } else {
-      endpoint = addUserType === 'operator' 
+      endpoint = addUserType === 'operator'
         ? `${BASE_URL}/parkinglots/add-operator/${lot.lotId}/${userId}`
         : `${BASE_URL}/parkinglots/add-staff/${lot.lotId}/${userId}`;
     }
@@ -393,34 +393,34 @@ const Customer: React.FC = () => {
     fetch(endpoint, {
       method: 'POST',
     })
-    .then(async response => {
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server response:', errorText);
-        
-        if (response.status === 404) {
-          throw new Error('User or parking lot not found');
-        } else if (response.status === 500) {
-          throw new Error('Server error. Please try again later.');
-        } else {
-          throw new Error('Failed to add user');
+      .then(async response => {
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Server response:', errorText);
+
+          if (response.status === 404) {
+            throw new Error('User or parking lot not found');
+          } else if (response.status === 500) {
+            throw new Error('Server error. Please try again later.');
+          } else {
+            throw new Error('Failed to add user');
+          }
         }
-      }
-      // Refresh the appropriate list
-      if (addUserType === 'owner') {
-        fetchLot(lot.lotId);
-      } else if (addUserType === 'operator') {
-        fetchOperators(lot.lotId);
-      } else {
-        fetchStaff(lot.lotId);
-      }
-      setShowAddUserModal(false);
-      setAddUserType(null);
-    })
-    .catch(error => {
-      console.error('Error adding user:', error);
-      setErrorMessage(error.message || 'Failed to add user. Please try again.');
-    });
+        // Refresh the appropriate list
+        if (addUserType === 'owner') {
+          fetchLot(lot.lotId);
+        } else if (addUserType === 'operator') {
+          fetchOperators(lot.lotId);
+        } else {
+          fetchStaff(lot.lotId);
+        }
+        setShowAddUserModal(false);
+        setAddUserType(null);
+      })
+      .catch(error => {
+        console.error('Error adding user:', error);
+        setErrorMessage(error.message || 'Failed to add user. Please try again.');
+      });
   };
 
   const openAddUserModal = (type: 'operator' | 'staff' | 'owner') => {
@@ -430,26 +430,26 @@ const Customer: React.FC = () => {
 
   const handleDeleteUser = async () => {
     if (!showDeleteUserModal || !lot) return;
-    
+
     const { type, userId } = showDeleteUserModal;
     const endpoint = `${BASE_URL}/parkinglots/remove-${type}/${lot.lotId}/${userId}`;
-    
+
     try {
       const response = await fetch(endpoint, {
         method: 'DELETE',
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to delete ${type}`);
       }
-      
+
       // Refresh the appropriate list
       if (type === 'operator') {
         fetchOperators(lot.lotId);
       } else {
         fetchStaff(lot.lotId);
       }
-      
+
       setShowDeleteUserModal(null);
     } catch (error) {
       console.error(`Error deleting ${type}:`, error);
@@ -547,28 +547,28 @@ const Customer: React.FC = () => {
           <div className="roles-table-row">
             <div className="roles-table-cell">Owner ID:</div>
             <div className="roles-table-cell">
-              {owner ? (
-                <div className="owner-container">
+              <div className="owner-container">
+                {owner ? (
                   <span className={editMode ? "Badge" : "NoBadge"}>
-                    <span 
+                    <span
                       className="user-info"
                       onClick={() => handleEditUser(owner)}
                     >
                       {formatUserId(owner.userId)} ({owner.email})
                     </span>
                   </span>
-                  {editMode && (
-                    <button 
-                      className="change-button"
-                      onClick={() => openAddUserModal('owner')}
-                    >
-                      Change
-                    </button>
-                  )}
-                </div>
-              ) : (
-                "Loading..."
-              )}
+                ) : (
+                  <span>Error.</span>
+                )}
+                {editMode && (
+                  <button
+                    className="change-button"
+                    onClick={() => openAddUserModal('owner')}
+                  >
+                    Change
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <div className="roles-table-row">
@@ -578,14 +578,14 @@ const Customer: React.FC = () => {
                 {operators.map((operator) => (
                   <p key={operator.userId}>
                     <span className={editMode ? "Badge" : "NoBadge"}>
-                      <span 
+                      <span
                         className="user-info"
                         onClick={() => handleEditUser(operator)}
                       >
                         {formatUserId(operator.userId)} ({operator.email})
                       </span>
                       {editMode && (
-                        <button 
+                        <button
                           className="delete-badge-btn"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -600,7 +600,7 @@ const Customer: React.FC = () => {
                 ))}
                 {editMode && (
                   <p>
-                    <button 
+                    <button
                       className="addidbtn"
                       onClick={() => openAddUserModal('operator')}
                     >
@@ -618,14 +618,14 @@ const Customer: React.FC = () => {
                 {staff.map((staffMember) => (
                   <p key={staffMember.userId}>
                     <span className={editMode ? "Badge" : "NoBadge"}>
-                      <span 
+                      <span
                         className="user-info"
                         onClick={() => handleEditUser(staffMember)}
                       >
                         {formatUserId(staffMember.userId)} ({staffMember.email})
                       </span>
                       {editMode && (
-                        <button 
+                        <button
                           className="delete-badge-btn"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -640,7 +640,7 @@ const Customer: React.FC = () => {
                 ))}
                 {editMode && (
                   <p>
-                    <button 
+                    <button
                       className="addidbtn"
                       onClick={() => openAddUserModal('staff')}
                     >
