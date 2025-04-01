@@ -13,12 +13,8 @@ interface NotificationsProps {
 
 const Notifications: React.FC<NotificationsProps> = ({ onClose }) => {
   const notifications = [
-    { id: 1, message: 'New Lot 0000-0023', type: 'new' },
-    { id: 2, message: 'System Outage', type: 'new' },
-    { id: 3, message: 'New Lot 0000-0001', type: 'old' },
-    { id: 4, message: 'Test1', type: 'old' },
-    { id: 4, message: 'System Outage', type: 'old' },
-    { id: 4, message: 'Test Notifiation', type: 'old' },
+    { id: 1, message: 'Not Implemented', type: 'new' },
+    { id: 2, message: 'Not Implemented', type: 'old' },
   ];
 
   const newNotifications = notifications.filter((n) => n.type === 'new');
