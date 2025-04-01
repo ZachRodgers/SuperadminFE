@@ -49,34 +49,23 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
     }
   };
 
-  // 1) Utility to compute the next numeric lot ID
-  const computeNextLotId = () => {
-    let maxNum = 0;
-    existingLots.forEach((lot) => {
-      // e.g. lot.lotID might be "PWP-PL-0000003"
-      const match = lot.lotID.match(/(\d+)$/);
-      if (match) {
-        const num = parseInt(match[1], 10);
-        if (num > maxNum) maxNum = num;
-      }
-    });
-    const nextNum = (maxNum + 1).toString().padStart(6, '0'); // Pad to 6 digits to match DB format
-    return nextNum; // Return just the number without any dashes
-  };
-
-  // 1) Utility to get the next lot ID from backend
-  const getNextLotId = async () => {
+  // Fetch the most recent lot ID from the database and compute the next available lot ID.
+  // The backend endpoint should return an object like:
+  // { "maxLotId": "PWP-PL-0000135" }
+  const fetchNextLotIdFromDB = async () => {
     try {
-      const response = await fetch('http://localhost:8085/ParkingWithParallel/parkinglots/get-next-id');
+      const response = await fetch('http://localhost:8085/ParkingWithParallel/parkinglots/get-max-lot');
       if (!response.ok) {
-        throw new Error('Failed to get next lot ID');
+        throw new Error('Failed to fetch max lot ID');
       }
       const data = await response.json();
-      return data.lotId;
+      const currentLotId = data.maxLotId; // e.g. "PWP-PL-0000135"
+      const numericPart = parseInt(currentLotId.replace('PWP-PL-', ''), 10);
+      const nextNum = (numericPart + 1).toString().padStart(6, '0');
+      return `PWP-PL-${nextNum}`;
     } catch (error) {
-      console.error('Error getting next lot ID:', error);
-      // Fallback to computing locally if backend call fails
-      return computeNextLotId();
+      console.error('Error fetching next lot ID from DB:', error);
+      return '';
     }
   };
 
@@ -90,22 +79,21 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
     lotCapacity: 0,
     accountStatus: 'Active',
     registryOn: false,
-    createdOn: '',
+    createdOn: new Date().toISOString(),
     createdBy: 'superadmin',
     modifiedOn: null as string | null,
     modifiedBy: null as string | null,
     isDeleted: false,
   });
 
-  // On mount, get next lotId from backend and set current date
+  // On mount, fetch the next lot ID from the database and set it in the form
   useEffect(() => {
     const initializeLotData = async () => {
-      const nextId = await getNextLotId();
-      const now = new Date().toISOString();
+      const nextId = await fetchNextLotIdFromDB();
       setLotData((prev) => ({
         ...prev,
         lotId: nextId,
-        createdOn: now,
+        createdOn: new Date().toISOString(),
       }));
     };
     initializeLotData();

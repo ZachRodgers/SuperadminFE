@@ -252,8 +252,8 @@ const Dashboard: React.FC = () => {
                       {key === 'purchaseDate'
                         ? 'Purchased'
                         : key === 'companyName'
-                        ? 'Company'
-                        : key.charAt(0).toUpperCase() + key.slice(1)}
+                          ? 'Company'
+                          : key.charAt(0).toUpperCase() + key.slice(1)}
                     </span>
                     <img
                       src={sortConfig.key === key ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
