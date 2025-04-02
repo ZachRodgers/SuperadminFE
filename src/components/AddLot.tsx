@@ -78,8 +78,8 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
     registryOn: false,
     createdOn: new Date().toISOString(),
     createdBy: 'superadmin',
-    modifiedOn: null as string | null,
-    modifiedBy: null as string | null,
+    modifiedOn: new Date().toISOString(),
+    modifiedBy: 'superadmin',
     isDeleted: false,
   });
 
@@ -87,10 +87,12 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
   useEffect(() => {
     const initializeLotData = async () => {
       const nextId = await fetchNextLotIdFromDB();
+      const currentTime = new Date().toISOString();
       setLotData((prev) => ({
         ...prev,
         lotId: nextId,
-        createdOn: new Date().toISOString(),
+        createdOn: currentTime,
+        modifiedOn: currentTime,
       }));
     };
     initializeLotData();
@@ -135,6 +137,9 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
       return;
     }
 
+    // Set current timestamp for both creation and modification
+    const currentTime = new Date().toISOString();
+
     // Build the request body using the retrieved ownerUserId as ownerCustomerId.
     const requestBody = {
       lotId: lotData.lotId,
@@ -145,10 +150,10 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
       lotCapacity: lotData.lotCapacity,
       accountStatus: lotData.accountStatus,
       registryOn: lotData.registryOn,
-      createdOn: lotData.createdOn,
+      createdOn: currentTime,
       createdBy: lotData.createdBy,
-      modifiedOn: lotData.modifiedOn,
-      modifiedBy: lotData.modifiedBy,
+      modifiedOn: currentTime,
+      modifiedBy: lotData.createdBy,
       isDeleted: lotData.isDeleted,
     };
 

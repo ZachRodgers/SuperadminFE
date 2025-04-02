@@ -55,11 +55,11 @@ const Dashboard: React.FC = () => {
   const [isNotificationsVisible, setNotificationsVisible] = useState(false);
   const [showAddLotModal, setShowAddLotModal] = useState(false);
   const [showArchivedLots, setShowArchivedLots] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
   const popupRef = useRef<HTMLDivElement | null>(null);
 
-  // Helper function to format lot IDs for display
   const formatLotId = (lotId: string): string => {
     const prefix = "PWP-PL-";
     if (lotId.startsWith(prefix)) {
@@ -68,27 +68,96 @@ const Dashboard: React.FC = () => {
     return lotId;
   };
 
+  // Format date strings consistently across the application
+  // This matches the formatDate function in Customer.tsx to ensure dates
+  // are displayed in the same format everywhere
+  const formatDate = (isoDate: string): string => {
+    if (!isoDate) return 'N/A';
+    return new Date(isoDate).toLocaleString();
+  };
+
   // Fetch lots from Spring Boot
   const fetchLots = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch(LOTS_API_URL);
       if (!response.ok) {
         console.error('HTTP error', response.status);
+        setIsLoading(false);
         return;
       }
       const data = await response.json();
+      console.log('Fetched lots data:', data); // added logging for debugging
+
       // Map DB fields to our Lot interface
+      // NOTE: The /parkinglots/get-all endpoint currently doesn't include createdOn field
+      // Backend modification is needed to include this information
       const parsedLots: Lot[] = data.map((item: any) => ({
         lotID: item.lotId,
         companyName: item.companyName,
         location: item.address,
-        purchaseDate: item.createdOn ? new Date(item.createdOn).toLocaleDateString() : 'N/A',
+        purchaseDate: 'Loading...', // Show loading state while fetching details
         adminPortal: 'https://google.ca',
         accountStatus: item.accountStatus,
       }));
       setLots(parsedLots);
+      console.log('Dashboard: Parsed lots:', parsedLots);
+
+      // After getting the basic lot information, fetch detailed information for each lot
+      fetchLotDetails(parsedLots);
     } catch (error) {
       console.error('Error fetching lots:', error);
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch detailed information for each lot to get creation dates
+  const fetchLotDetails = async (basicLots: Lot[]) => {
+    try {
+      const lotsWithDetails = [...basicLots];
+      let updatedCount = 0;
+
+      // Process lots in parallel with Promise.all
+      await Promise.all(
+        basicLots.map(async (lot, index) => {
+          try {
+            const detailResponse = await fetch(`${LOTS_API_URL.replace('/get-all', '')}/get-by-id/${lot.lotID}`);
+            if (detailResponse.ok) {
+              const detailData = await detailResponse.json();
+              if (detailData && detailData.createdOn) {
+                lotsWithDetails[index] = {
+                  ...lot,
+                  purchaseDate: formatDate(detailData.createdOn)
+                };
+                updatedCount++;
+              } else {
+                lotsWithDetails[index] = {
+                  ...lot,
+                  purchaseDate: 'N/A'
+                };
+              }
+            } else {
+              lotsWithDetails[index] = {
+                ...lot,
+                purchaseDate: 'N/A'
+              };
+            }
+          } catch (detailError) {
+            console.warn(`Error fetching details for lot ${lot.lotID}:`, detailError);
+            lotsWithDetails[index] = {
+              ...lot,
+              purchaseDate: 'N/A'
+            };
+          }
+        })
+      );
+
+      console.log(`Updated creation dates for ${updatedCount} out of ${basicLots.length} lots`);
+      setLots(lotsWithDetails);
+    } catch (error) {
+      console.error('Error fetching lot details:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -299,46 +368,60 @@ const Dashboard: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredLots.map((lot, index) => {
-              const { online, calibrating, offline, total } = calculateDeviceStatus(lot.lotID);
-              const visibleDevices = 8;
-              const additionalDevices = total - visibleDevices;
-              const dotsToRender = Array(Math.min(visibleDevices, total))
-                .fill(0)
-                .map((_, idx) => {
-                  if (idx < online) {
-                    return <span key={idx} className="dot green"></span>;
-                  } else if (idx < online + calibrating) {
-                    return <span key={idx} className="dot blue"></span>;
-                  } else {
-                    return <span key={idx} className="dot red"></span>;
-                  }
-                });
+            {isLoading && filteredLots.length === 0 ? (
+              <tr className="loading-indicator-row">
+                <td colSpan={6} className="pulse-animation">
+                  Loading lot data...
+                </td>
+              </tr>
+            ) : filteredLots.length === 0 ? (
+              <tr>
+                <td colSpan={6} style={{ textAlign: 'center', padding: '20px' }}>
+                  No lots found.
+                </td>
+              </tr>
+            ) : (
+              filteredLots.map((lot, index) => {
+                const { online, calibrating, offline, total } = calculateDeviceStatus(lot.lotID);
+                const visibleDevices = 8;
+                const additionalDevices = total - visibleDevices;
+                const dotsToRender = Array(Math.min(visibleDevices, total))
+                  .fill(0)
+                  .map((_, idx) => {
+                    if (idx < online) {
+                      return <span key={idx} className="dot green"></span>;
+                    } else if (idx < online + calibrating) {
+                      return <span key={idx} className="dot blue"></span>;
+                    } else {
+                      return <span key={idx} className="dot red"></span>;
+                    }
+                  });
 
-              return (
-                <tr key={index} onClick={() => handleOpenLot(lot.lotID)}>
-                  {/* Use our helper to display the formatted Lot ID */}
-                  <td>{formatLotId(lot.lotID)}</td>
-                  <td>{lot.companyName}</td>
-                  <td>{lot.location}</td>
-                  <td>{lot.purchaseDate}</td>
-                  <td>
-                    {dotsToRender}
-                    {additionalDevices > 0 && <span className="extra-devices">+{additionalDevices}</span>}
-                  </td>
-                  <td>
-                    <a
-                      href={lot.adminPortal}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      🡥 Open
-                    </a>
-                  </td>
-                </tr>
-              );
-            })}
+                return (
+                  <tr key={index} onClick={() => handleOpenLot(lot.lotID)}>
+                    {/* Use our helper to display the formatted Lot ID */}
+                    <td>{formatLotId(lot.lotID)}</td>
+                    <td>{lot.companyName}</td>
+                    <td>{lot.location}</td>
+                    <td>{lot.purchaseDate}</td>
+                    <td>
+                      {dotsToRender}
+                      {additionalDevices > 0 && <span className="extra-devices">+{additionalDevices}</span>}
+                    </td>
+                    <td>
+                      <a
+                        href={lot.adminPortal}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        🡥 Open
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

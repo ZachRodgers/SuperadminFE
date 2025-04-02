@@ -176,6 +176,9 @@ const Customer: React.FC = () => {
       return;
     }
 
+    // Get current timestamp
+    const currentTime = new Date().toISOString();
+
     // Create updated lot with all required fields
     const updatedLot: LotData = {
       lotId: lot.lotId,
@@ -188,7 +191,7 @@ const Customer: React.FC = () => {
       registryOn: lot.registryOn,
       createdOn: lot.createdOn,
       createdBy: lot.createdBy,
-      modifiedOn: new Date().toISOString(),
+      modifiedOn: currentTime,
       modifiedBy: CURRENT_SUPERADMIN,
       isDeleted: lot.isDeleted,
     };
@@ -265,6 +268,9 @@ const Customer: React.FC = () => {
     // Determine the new status
     const updatedStatus = lot.accountStatus.toLowerCase() === newStatus ? "active" : newStatus;
 
+    // Get current timestamp
+    const currentTime = new Date().toISOString();
+
     // Create updated lot with all required fields
     const updatedLot: LotData = {
       lotId: lot.lotId,
@@ -277,7 +283,7 @@ const Customer: React.FC = () => {
       registryOn: lot.registryOn,
       createdOn: lot.createdOn,
       createdBy: lot.createdBy,
-      modifiedOn: new Date().toISOString(),
+      modifiedOn: currentTime,
       modifiedBy: CURRENT_SUPERADMIN,
       isDeleted: lot.isDeleted,
     };
@@ -536,8 +542,12 @@ const Customer: React.FC = () => {
           >
             {editableFields.lotCapacity ?? lot.lotCapacity}
           </p>
-          <p className={editMode ? "disabled-text" : ""}>{formatDate(lot.createdOn)}</p>
-          <p className={editMode ? "disabled-text" : ""}>{formatDate(lot.modifiedOn)}</p>
+          <p className={editMode ? "disabled-text" : ""}>
+            {formatDate(lot.createdOn)}
+          </p>
+          <p className={editMode ? "disabled-text" : ""}>
+            {formatDate(lot.modifiedOn)}
+          </p>
         </div>
       </div>
 
