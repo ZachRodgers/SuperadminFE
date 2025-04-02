@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import './VehicleLog.css';
 import './RefreshBar.css';
+import { BASE_URL } from '../config/api';
 
 interface AlprData {
   alprId: string;
@@ -32,8 +33,8 @@ interface SortConfig {
   direction: 'ascending' | 'descending';
 }
 
-const ALPR_API_URL = 'http://localhost:8085/ParkingWithParallel/alpr';
-const DEVICES_API_URL = 'http://localhost:8085/ParkingWithParallel/devices';
+const ALPR_API_URL = `${BASE_URL}/alpr`;
+const DEVICES_API_URL = `${BASE_URL}/devices`;
 const refreshInterval = 10000000;
 
 const VehicleLog: React.FC = () => {

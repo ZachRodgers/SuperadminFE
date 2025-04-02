@@ -4,8 +4,8 @@ import "./Customer.css";
 import Modal from "../components/Modal";
 import AddUser from "../components/AddUser";
 import EditUser from "../components/EditUser";
+import { BASE_URL } from '../config/api';
 
-const BASE_URL = "http://localhost:8085/ParkingWithParallel";
 const CURRENT_SUPERADMIN = "1";
 
 interface LotData {

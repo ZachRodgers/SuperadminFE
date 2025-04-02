@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from '../config/api';
 import React, { useState } from 'react';
 import './Login.css';
 
@@ -10,7 +10,7 @@ const Login: React.FC = () => {
   const handleLogin = async () => {
     try {
       // This calls our Spring Boot /login endpoint
-      const response = await axios.post('http://localhost:8085/ParkingWithParallel/login', {
+      const response = await api.post('/login', {
         email: username,
         password: password
       });

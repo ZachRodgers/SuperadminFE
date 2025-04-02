@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './AddUser.css';
+import { BASE_URL } from '../config/api';
 
 interface UserResponse {
   userId: string;
@@ -74,7 +75,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
     const fetchUsers = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('http://localhost:8085/ParkingWithParallel/users/get-all-users');
+        const response = await fetch(`${BASE_URL}/users/get-all-users`);
         if (!response.ok) {
           throw new Error('Failed to fetch users');
         }
@@ -153,7 +154,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
         return;
       }
 
-      const response = await fetch('http://localhost:8085/ParkingWithParallel/users/create-user', {
+      const response = await fetch(`${BASE_URL}/users/create-user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

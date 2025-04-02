@@ -3,9 +3,10 @@ import './Dashboard.css';
 import { useNavigate } from 'react-router-dom';
 import Notifications from '../components/Notifications';
 import AddLot from '../components/AddLot';
+import { api, BASE_URL } from '../config/api';
 
-const LOTS_API_URL = 'http://localhost:8085/ParkingWithParallel/parkinglots/get-all';
-const DEVICES_API_URL = 'http://localhost:8085/ParkingWithParallel/devices';
+const LOTS_API_URL = `${BASE_URL}/parkinglots/get-all`;
+const DEVICES_API_URL = `${BASE_URL}/devices`;
 
 interface Lot {
   lotID: string;
