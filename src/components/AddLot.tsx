@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AddUser from './AddUser';
+import { BASE_URL } from '../config/api';
 
 interface ExistingLot {
   lotID: string;
@@ -34,7 +35,7 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
   const fetchUsers = async () => {
     try {
       setIsLoadingUsers(true);
-      const response = await fetch('http://localhost:8085/ParkingWithParallel/users/get-all-users');
+      const response = await fetch(`${BASE_URL}/users/get-all-users`);
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
@@ -54,7 +55,7 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
   // { "lotId": "PWP-PL-0000136" }
   const fetchNextLotIdFromDB = async () => {
     try {
-      const response = await fetch('http://localhost:8085/ParkingWithParallel/parkinglots/get-next-id');
+      const response = await fetch(`${BASE_URL}/parkinglots/get-next-id`);
       if (!response.ok) {
         throw new Error('Failed to fetch next lot ID');
       }
@@ -104,7 +105,7 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
    */
   const getOwnerUserIdByEmail = async (email: string): Promise<string | null> => {
     try {
-      const response = await fetch(`http://localhost:8085/ParkingWithParallel/users/get-by-email/${email}`);
+      const response = await fetch(`${BASE_URL}/users/get-by-email/${email}`);
       if (!response.ok) {
         return null;
       }
@@ -158,7 +159,7 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
     };
 
     try {
-      const response = await fetch('http://localhost:8085/ParkingWithParallel/parkinglots/create', {
+      const response = await fetch(`${BASE_URL}/parkinglots/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),

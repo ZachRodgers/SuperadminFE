@@ -3,9 +3,10 @@ import { useParams } from 'react-router-dom';
 import Modal from '../components/Modal';
 import './DeviceManager.css';
 import './RefreshBar.css';
+import { BASE_URL } from '../config/api';
 
 // Points to your new device endpoints (DevicesController).
-const DEVICES_API_URL = 'http://localhost:8085/ParkingWithParallel/devices';
+const DEVICES_API_URL = `${BASE_URL}/devices`;
 const DEVICES_BY_LOT_URL = `${DEVICES_API_URL}/get-by-lot`;
 const DEVICES_CREATE_URL = `${DEVICES_API_URL}/create`;
 const DEVICES_DELETE_URL = `${DEVICES_API_URL}/permanent-delete`;

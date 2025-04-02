@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './AddUser.css'; // Reusing AddUser styles
+import { BASE_URL } from '../config/api';
 
 interface User {
   userId: string;
@@ -25,7 +26,7 @@ interface EditUserProps {
 }
 
 const EditUser: React.FC<EditUserProps> = ({ isOpen, onClose, onSave, user }) => {
-  const [userData, setUserData] = useState<User>({...user});
+  const [userData, setUserData] = useState<User>({ ...user });
   const [error, setError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState<boolean>(false);
@@ -47,7 +48,7 @@ const EditUser: React.FC<EditUserProps> = ({ isOpen, onClose, onSave, user }) =>
       if (isLoading) return;
       setIsLoading(true);
       setError(null);
-      
+
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(userData.email)) {
@@ -57,12 +58,12 @@ const EditUser: React.FC<EditUserProps> = ({ isOpen, onClose, onSave, user }) =>
       }
 
       console.log('Updating user with ID:', userData.userId);
-      
+
       // First check if user exists
       try {
         console.log('Checking if user exists...');
-        const checkResponse = await fetch(`http://localhost:8085/ParkingWithParallel/users/get-user-by-id/${userData.userId}`);
-        
+        const checkResponse = await fetch(`${BASE_URL}/users/get-user-by-id/${userData.userId}`);
+
         if (!checkResponse.ok) {
           console.error('Failed to find user');
           throw new Error('User not found with the provided ID');
@@ -71,11 +72,11 @@ const EditUser: React.FC<EditUserProps> = ({ isOpen, onClose, onSave, user }) =>
         // Get the existing user from the response
         const existingUser = await checkResponse.json();
         console.log('Retrieved existing user:', existingUser);
-        
+
         // ======= FINAL APPROACH: Direct access to repository method =======
         try {
           console.log('Attempting direct update with JSON...');
-          
+
           // Create a complete user object with all required fields
           const completeUserData = {
             ...existingUser,         // Start with all existing properties
@@ -89,35 +90,35 @@ const EditUser: React.FC<EditUserProps> = ({ isOpen, onClose, onSave, user }) =>
             isBanned: existingUser.isBanned || false,
             isDeleted: false
           };
-          
+
           console.log('Sending update with complete data:', completeUserData);
-          
+
           // Try the update with the complete data
-          const updateResponse = await fetch(`http://localhost:8085/ParkingWithParallel/users/update-user/${userData.userId}`, {
+          const updateResponse = await fetch(`${BASE_URL}/users/update-user/${userData.userId}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify(completeUserData),
           });
-          
+
           if (updateResponse.ok) {
             console.log('Update successful!');
             onSave();
             onClose();
             return;
           }
-          
+
           const errorText = await updateResponse.text();
           console.error('Update failed:', errorText);
-          
+
           // Display a specific message for duplicate email errors
           if (errorText === 'USER00002' || errorText === 'USER00004') {
             setEmailError('A user with this email already exists');
             setIsLoading(false);
             return;
           }
-          
+
           // If we get here, all approaches have failed - suggest a backend fix
           throw new Error(`Backend error (${errorText}). Please contact your developer.`);
         } catch (error) {
@@ -130,10 +131,10 @@ const EditUser: React.FC<EditUserProps> = ({ isOpen, onClose, onSave, user }) =>
       }
     } catch (err) {
       console.error('Error updating user:', err);
-      
+
       if (typeof err === 'object' && err !== null && 'message' in err && typeof err.message === 'string') {
         setError(err.message);
-        
+
         // Add suggestion about temporary workaround
         if (err.message.includes('backend API appears to have a bug')) {
           setError(prev => `${prev || ''}\n\nSuggested backend fix: Update UsersController.java to fix the updateUser method by using the path variable:
@@ -165,7 +166,7 @@ public ResponseEntity<Users> updateUser(@PathVariable("id") String userId, @Vali
         <div className="modal-header">
           <h2>Edit User</h2>
         </div>
-        
+
         <div className="new-user-form">
           <div className="form-group">
             <label>Name:</label>
@@ -214,17 +215,17 @@ public ResponseEntity<Users> updateUser(@PathVariable("id") String userId, @Vali
         </div>
 
         {error && <div className="error">{error}</div>}
-        
+
         <div className="button-container">
-          <button 
+          <button
             className="confirm-button"
             onClick={handleSave}
             disabled={isLoading || !hasChanges || !userData.name || !userData.email || !userData.phoneNo}
           >
             {isLoading ? 'Saving...' : 'Save Changes'}
           </button>
-          <button 
-            className="cancel-button" 
+          <button
+            className="cancel-button"
             onClick={onClose}
             disabled={isLoading}
           >
