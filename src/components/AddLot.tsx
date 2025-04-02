@@ -49,20 +49,17 @@ const AddLot: React.FC<AddLotProps> = ({ existingLots, onClose, onLotAdded }) =>
     }
   };
 
-  // Fetch the most recent lot ID from the database and compute the next available lot ID.
-  // The backend endpoint should return an object like:
-  // { "maxLotId": "PWP-PL-0000135" }
+  // Fetch the next available lot ID directly from the backend.
+  // The backend endpoint returns an object like:
+  // { "lotId": "PWP-PL-0000136" }
   const fetchNextLotIdFromDB = async () => {
     try {
-      const response = await fetch('http://localhost:8085/ParkingWithParallel/parkinglots/get-max-lot');
+      const response = await fetch('http://localhost:8085/ParkingWithParallel/parkinglots/get-next-id');
       if (!response.ok) {
-        throw new Error('Failed to fetch max lot ID');
+        throw new Error('Failed to fetch next lot ID');
       }
       const data = await response.json();
-      const currentLotId = data.maxLotId; // e.g. "PWP-PL-0000135"
-      const numericPart = parseInt(currentLotId.replace('PWP-PL-', ''), 10);
-      const nextNum = (numericPart + 1).toString().padStart(6, '0');
-      return `PWP-PL-${nextNum}`;
+      return data.lotId; // Backend returns { "lotId": "PWP-PL-0000136" }
     } catch (error) {
       console.error('Error fetching next lot ID from DB:', error);
       return '';
