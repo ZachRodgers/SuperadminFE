@@ -62,8 +62,9 @@ const Dashboard: React.FC = () => {
   const popupRef = useRef<HTMLDivElement | null>(null);
 
   const formatLotId = (lotId: string): string => {
+    // Only for display purposes, remove the PWP-PL- prefix
     const prefix = "PWP-PL-";
-    if (lotId.startsWith(prefix)) {
+    if (lotId && lotId.startsWith(prefix)) {
       return lotId.substring(prefix.length);
     }
     return lotId;
