@@ -4,7 +4,7 @@ import axios from "axios";
 const getBaseUrl = () => {
   // Check if we're in production (superadmin.parkwithparallel.com)
   if (window.location.hostname === "superadmin.parkwithparallel.com") {
-    return "http://api.parkwithparallel.com";
+    return "https://api.parkwithparallel.com";
   }
   // Default to development environment
   return "http://localhost:8085/ParkingWithParallel";
