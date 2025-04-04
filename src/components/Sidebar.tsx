@@ -73,7 +73,17 @@ const Sidebar: React.FC = () => {
       <div className="footer">
         <button
           className="link-button"
-          onClick={() => window.open("https://google.com", "_blank")}
+          onClick={() => {
+            const token = localStorage.getItem('token');
+            if (token && lotId) {
+              window.open(
+                `https://operator.parkwithparallel.com/lot/${lotId}/revenue-dashboard?superadmin=true&token=${token}`,
+                "_blank"
+              );
+            } else {
+              alert("Your session has expired or lot ID is missing.");
+            }
+          }}
         >
           🡥 Admin Portal
         </button>
