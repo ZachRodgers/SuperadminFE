@@ -5,7 +5,7 @@ import './Login.css';
 const Login: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<React.ReactNode>(null);
 
   const handleLogin = async () => {
     try {
@@ -15,12 +15,21 @@ const Login: React.FC = () => {
         password: password
       });
 
-      // We expect { "token": "...", "userId": "..." }
-      const { token, userId } = response.data;
+      // We expect { "token": "...", "userId": "...", "role": "..." }
+      const { token, userId, role } = response.data;
+
+      // Check if the user has the "Operator" role
+      if (role === "Operator") {
+        setError(<>
+          Permission Denied. Please try <a href="https://operator.parkwithparallel.com/login" target="_blank" rel="noopener noreferrer" style={{ color: '#ffbfbf' }}>Operator Portal</a>
+        </>);
+        return;
+      }
 
       // Store them in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('userId', userId);
+      localStorage.setItem('role', role);
       localStorage.setItem('isAuthenticated', 'true');
 
       // Redirect, for example to /dashboard
