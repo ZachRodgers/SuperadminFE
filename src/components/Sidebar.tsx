@@ -76,8 +76,10 @@ const Sidebar: React.FC = () => {
           onClick={() => {
             const token = localStorage.getItem('token');
             if (token && lotId) {
+              // Encode the token to make it URL-safe
+              const encodedToken = encodeURIComponent(token);
               window.open(
-                `https://operator.parkwithparallel.com/lot/${lotId}/revenue-dashboard?superadmin=true&token=${token}`,
+                `https://operator.parkwithparallel.com/lot/${lotId}/revenue-dashboard?superadmin=true&token=${encodedToken}`,
                 "_blank"
               );
             } else {
