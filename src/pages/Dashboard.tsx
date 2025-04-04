@@ -412,10 +412,21 @@ const Dashboard: React.FC = () => {
                     </td>
                     <td>
                       <a
-                        href={lot.adminPortal}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
+                        href="#"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Get the current token
+                          const token = localStorage.getItem('token');
+                          if (token) {
+                            // Open operator portal with the lot ID and token
+                            window.open(
+                              `https://operator.parkwithparallel.com/lot/${lot.lotID}/revenue-dashboard?superadmin=true&token=${token}`,
+                              "_blank"
+                            );
+                          } else {
+                            alert("Your session has expired. Please log in again.");
+                          }
+                        }}
                       >
                         🡥 Open
                       </a>
