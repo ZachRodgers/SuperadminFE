@@ -202,8 +202,8 @@ h1, h2 {
   display: table-cell;
   padding: 8px 0;
   vertical-align: middle;
-  min-width: 190px;
-  width: 190px;
+  min-width: 20px;
+  width: 230px;
 }
 
 .roles-table-cell:last-child {
