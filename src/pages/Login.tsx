@@ -18,11 +18,15 @@ const Login: React.FC = () => {
       // We expect { "token": "...", "userId": "...", "role": "..." }
       const { token, userId, role } = response.data;
 
-      // Check if the user has the "Operator" role
-      if (role === "Operator") {
-        setError(<>
-          Permission Denied. Please try <a href="https://operator.parkwithparallel.com/login" target="_blank" rel="noopener noreferrer" style={{ color: '#ffbfbf' }}>Operator Portal</a>
-        </>);
+      // Only SuperAdmin role is allowed to log in
+      if (role !== "SuperAdmin") {
+        if (role === "Operator") {
+          setError(<>
+            Permission Denied. Please try <a href="https://operator.parkwithparallel.com/login" target="_blank" rel="noopener noreferrer" style={{ color: '#ffbfbf' }}>Operator Portal</a>
+          </>);
+        } else {
+          setError("Permission Denied");
+        }
         return;
       }
 
