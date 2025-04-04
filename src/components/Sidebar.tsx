@@ -78,6 +78,13 @@ const Sidebar: React.FC = () => {
             if (token && lotId) {
               // Encode the token to make it URL-safe
               const encodedToken = encodeURIComponent(token);
+
+              // For debugging only
+              console.log("SuperadminFE - Token being passed:", token.substring(0, 20) + "...");
+
+              // Store token in session storage for direct pickup
+              sessionStorage.setItem('superadmin_token_transfer', token);
+
               window.open(
                 `https://operator.parkwithparallel.com/lot/${lotId}/revenue-dashboard?superadmin=true&token=${encodedToken}`,
                 "_blank"
