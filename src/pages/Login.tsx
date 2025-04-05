@@ -11,7 +11,7 @@ const Login: React.FC = () => {
     try {
       // This calls our Spring Boot /login endpoint
       const response = await api.post('/login', {
-        email: username,
+        email: username.toLowerCase(),
         password: password
       });
 
