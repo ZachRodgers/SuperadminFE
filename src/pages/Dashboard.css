@@ -163,7 +163,7 @@
 /* Individual column widths */
 .dashboard-table th:nth-child(1),
 .dashboard-table td:nth-child(1) {
-  width: 8%; /* LotID column */
+  width: 10%; /* LotID column */
 }
 
 .dashboard-table th:nth-child(2),
@@ -183,12 +183,12 @@
 
 .dashboard-table th:nth-child(5),
 .dashboard-table td:nth-child(5) {
-  width: 18%; /* Devices column */
+  width: 15%; /* Devices column */
 }
 
 .dashboard-table th:nth-child(6),
 .dashboard-table td:nth-child(6) {
-  width: 8%; /* Admin Portal column */
+  width: 11%; /* Admin Portal column */
   text-align: center; /* Center-align the Admin Portal column */
 }
 
