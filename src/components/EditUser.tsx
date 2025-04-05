@@ -82,7 +82,7 @@ const EditUser: React.FC<EditUserProps> = ({ isOpen, onClose, onSave, user }) =>
             ...existingUser,         // Start with all existing properties
             userId: userData.userId, // Include the ID explicitly
             name: userData.name,
-            email: userData.email,
+            email: userData.email.toLowerCase(),
             phoneNo: userData.phoneNo,
             role: userData.role,
             // Ensure these fields are explicitly defined
