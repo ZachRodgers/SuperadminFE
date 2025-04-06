@@ -10,6 +10,53 @@
   height: 100vh;
   position: sticky;
   top: 0;
+  transition: transform 0.4s ease, width 0.3s ease, min-width 0.3s ease, padding 0.3s ease;
+  z-index: 1000;
+}
+
+/* Collapsed state */
+.sidebar.collapsed {
+  transform: translateX(-310px);
+  width: 0;
+  min-width: 0;
+}
+
+/* Toggle button styles */
+.sidebar-toggle-button {
+  position: absolute;
+  top: 20px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: #2a2b2e;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.sidebar-toggle-button:hover {
+  background-color: #ffffff;
+}
+
+.sidebar-toggle-button:hover img {
+  filter: brightness(0) invert(0); /* Make the arrow dark when background is white */
+}
+
+.sidebar-toggle-button img {
+  width: 15px;
+  height: 15px;
+  transition: filter 0.3s ease;
+}
+
+/* Toggle button when sidebar is collapsed */
+.sidebar-toggle-button.collapsed {
+  position: fixed;
+  top: 20px;
+  left: 10px;
+  z-index: 1001;
 }
 
 .sidebar .logo {
