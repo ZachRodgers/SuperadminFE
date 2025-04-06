@@ -40,7 +40,7 @@ interface SortConfig {
 
 const ALPR_API_URL = `${BASE_URL}/alpr`;
 const DEVICES_API_URL = `${BASE_URL}/devices`;
-const refreshInterval = 10000000;
+const refreshInterval = 100000000;
 
 // Helper function to extract just the state/province name from the vehicleState
 const extractStateFromVehicleState = (vehicleState: string | undefined): string => {
@@ -355,7 +355,7 @@ const VehicleLog: React.FC = () => {
           <div className="refresh-bar-fill" style={{ width: `${refreshProgress}%` }}></div>
         </div>
         <div className="refresh-text" onClick={handleManualRefresh}>
-          {refreshProgress < 100 ? 'Refreshing...' : 'Manual Refresh'}
+          {refreshProgress < 100 ? 'Refresh' : 'Manual Refresh'}
         </div>
       </div>
 

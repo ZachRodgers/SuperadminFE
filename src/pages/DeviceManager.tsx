@@ -12,8 +12,8 @@ const DEVICES_CREATE_URL = `${DEVICES_API_URL}/create`;
 const DEVICES_DELETE_URL = `${DEVICES_API_URL}/permanent-delete`;
 
 // Refresh bar constants
-const REFRESH_INTERVAL_MS = 10000000;
-const PROGRESS_UPDATE_MS = 10000;    //10 seconds update progress bar every 100ms
+const REFRESH_INTERVAL_MS = 100000000;
+const PROGRESS_UPDATE_MS = 100000;    //10 seconds update progress bar every 100ms
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz';
 
 // Matches your /devices schema from Swagger
@@ -305,7 +305,7 @@ const DeviceManager: React.FC = () => {
           <div className="refresh-bar-fill" style={{ width: `${progress}%` }} />
         </div>
         <div className="refresh-text" onClick={handleManualRefresh}>
-          Refreshing...
+          Refresh
         </div>
       </div>
 
