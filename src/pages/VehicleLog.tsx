@@ -66,7 +66,7 @@ const VehicleLog: React.FC = () => {
   const [newEntry, setNewEntry] = useState({
     plateNumber: '',
     timestamp: '',
-    region: 'Western US',
+    region: 'Test',
     vehicleStatus: 'Enter'
   });
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
@@ -148,7 +148,24 @@ const VehicleLog: React.FC = () => {
   // Format date/time
   const parseTimestamp = (ts: string) => {
     const d = new Date(ts);
-    const date = d.toISOString().split('T')[0];
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Format date based on whether it's today, yesterday, or another day
+    let date;
+    if (d.toDateString() === now.toDateString()) {
+      date = 'Today';
+    } else if (d.toDateString() === yesterday.toDateString()) {
+      date = 'Yesterday';
+    } else {
+      // Format as M-D-Y with only last 2 digits of year
+      const month = (d.getMonth() + 1).toString().padStart(2, '0');
+      const day = d.getDate().toString().padStart(2, '0');
+      const year = d.getFullYear().toString().slice(-2); // Get only last 2 digits of year
+      date = `${month}-${day}-${year}`;
+    }
+
     const time = d.toLocaleTimeString('en-US', { hour12: false });
     return { date, time };
   };
@@ -297,7 +314,7 @@ const VehicleLog: React.FC = () => {
       setNewEntry({
         plateNumber: '',
         timestamp: '',
-        region: 'Western US',
+        region: 'Test',
         vehicleStatus: 'Enter'
       });
     } catch (error) {
@@ -503,7 +520,7 @@ const VehicleLog: React.FC = () => {
               type="text"
               value={newEntry.region}
               onChange={(e) => setNewEntry({ ...newEntry, region: e.target.value })}
-              placeholder="Western US, Eastern US, etc."
+              placeholder="Ottawa, Florida, etc."
             />
 
             <label>Status:</label>
