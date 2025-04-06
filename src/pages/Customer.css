@@ -1,21 +1,21 @@
 .customer-page {
   display: flex;
   flex-direction: column;
-  padding: 0px;
+  padding: 0;
 }
 
 .page-title {
   font-size: 24px;
   font-weight: bold;
   margin-bottom: 20px;
-  color: #ffffff; 
+  color: #ffffff;
 }
 
 .customer-details {
   display: grid;
   grid-template-columns: 1fr 4fr;
   gap: 10px;
-  margin-bottom: 20px; 
+  margin-bottom: 20px;
 }
 
 .customer-column {
@@ -24,7 +24,7 @@
 }
 
 .customer-column p {
-  margin: 3px 0; /* Spacing between lines */
+  margin: 3px 0;
 }
 
 .admin-password {
@@ -32,7 +32,7 @@
 }
 
 .admin-password:hover {
-  color: #bfbfbf; /* Hover effect */
+  color: #bfbfbf;
 }
 
 .disabled-text {
@@ -41,8 +41,8 @@
 }
 
 .editable-highlight {
-  background-color: #363941; /* Highlight color */
-  border-radius: 3px; /* Optional: adds slight rounding to the highlight */
+  background-color: #363941;
+  border-radius: 3px;
 }
 
 .account-actions {
@@ -50,21 +50,21 @@
   width: 10%;
   justify-content: left;
   gap: 20px;
-  margin-bottom: 0px;
+  margin-bottom: 0;
 }
 
 .action-button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #272A30;
+  background: #272a30;
   border: none;
   cursor: pointer;
   position: relative;
 }
 
 .action-button:hover {
-  background: #272A30;
+  background: #272a30;
 }
 
 .button-icon {
@@ -81,30 +81,28 @@
   transition: opacity 0.2s ease-in-out;
 }
 
-/* Regular hover effects */
 .action-button:hover .button-icon {
-  opacity: 0; /* Fades out default icon */
+  opacity: 0;
 }
 
 .action-button:hover .button-icon-hover {
-  opacity: 1; /* Fades in inverted icon */
+  opacity: 1;
 }
 
-/* When edit mode is active */
 .action-button.edit-active .button-icon {
-  opacity: 0; /* Hides default icon */
+  opacity: 0;
 }
 
 .action-button.edit-active .button-icon-hover {
-  opacity: 1; /* Keeps inverted icon visible */
+  opacity: 1;
 }
 
 .action-button.edit-active:hover .button-icon {
-  opacity: 0; /* Prevents fading when hovering in edit mode */
+  opacity: 0;
 }
 
 .action-button.edit-active:hover .button-icon-hover {
-  opacity: 1; /* Keeps inverted icon stable */
+  opacity: 1;
 }
 
 .action-button span {
@@ -120,17 +118,18 @@
 
 .log-box {
   background-color: #363941;
-  padding: 0px 20px;
+  padding: 0 20px;
   border-radius: 5px;
   height: 150px;
   overflow-y: auto;
 }
 
-h1, h2 {
-  font-size: 32px; 
+h1,
+h2 {
+  font-size: 32px;
   font-weight: bold;
   color: #ffffff;
-  margin-bottom: 20px; 
+  margin-bottom: 20px;
 }
 
 .customer-page h1 {
@@ -140,20 +139,20 @@ h1, h2 {
 }
 
 .customer-page h2 {
-  font-size: 28px; 
+  font-size: 28px;
   text-align: left;
   margin-bottom: 10px;
 }
 
-/* Prevent customer styles from affecting the modal */
-.customer-page .modal h1, .customer-page .modal h2 {
-  font-size: unset !important; /* Reset modal titles */
-  margin: 0 !important; /* Ensure no extra margins are inherited */
-  text-align: center; /* Keep default modal alignment */
+.customer-page .modal h1,
+.customer-page .modal h2 {
+  font-size: unset !important;
+  margin: 0 !important;
+  text-align: center;
 }
 
-/* Scope customer-specific headers */
-.customer-page-header h1, .customer-page-header h2 {
+.customer-page-header h1,
+.customer-page-header h2 {
   font-size: 32px;
   font-weight: bold;
   color: #ffffff;
@@ -161,64 +160,45 @@ h1, h2 {
   text-align: left;
 }
 
-/* General customer page structure remains the same */
-
-/* Remove inherited font-size and reset modal-specific styles */
 .customer-page .modal {
   font-size: unset !important;
-  text-align: center; /* Ensure consistent alignment for modals */
+  text-align: center;
 }
 
 .modal-title {
-  font-size: 20px !important; /* Larger size for title */
+  font-size: 20px !important;
   font-weight: bold;
 }
 
 .modal p {
-  font-size: 14px !important; /* Ensure modal text uses its style */
+  font-size: 14px !important;
   text-align: center;
 }
 
+/* Flex layout for roles section */
 .roles-section {
-  display: grid;
-  grid-template-columns: 1fr 4fr;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
-.roles-table {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
-  border-spacing: 0;
-  border-collapse: collapse;
+.roles-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
 }
 
-.roles-table-row {
-  display: table-row;
-}
-
-.roles-table-cell {
-  display: table-cell;
-  padding: 8px 0;
-  vertical-align: middle;
-  min-width: 20px;
+.roles-label {
   width: 230px;
+  flex-shrink: 0;
 }
 
-.roles-table-cell:last-child {
-  width: auto;
-}
-
-.user-list {
-  display: table-row;
-}
-
-.user-list p {
-  display: table-cell;
-  padding: 8px 0;
-  vertical-align: middle;
-  width: 190px;
+.roles-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .owner-container {
@@ -229,7 +209,8 @@ h1, h2 {
   padding: 0;
 }
 
-.NoBadge, .Badge {
+.NoBadge,
+.Badge {
   display: inline-flex;
   align-items: center;
   padding: 4px 12px;
@@ -277,7 +258,7 @@ h1, h2 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-left: 0px;
+  margin-left: 0;
   border-radius: 50%;
   transition: all 0.2s ease;
   font-weight: 400;
@@ -322,6 +303,7 @@ h1, h2 {
   height: 28px;
   display: inline-flex;
   align-items: center;
+  width: 20px;
 }
 
 .addidbtn img {

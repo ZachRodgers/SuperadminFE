@@ -433,9 +433,9 @@ const VehicleLog: React.FC = () => {
                 />
               </div>
             </th>
-            {!isTableNarrow && (
+            {/* {!isTableNarrow && (
               <th>Image</th>
-            )}
+            )} */}
           </tr>
         </thead>
         <tbody>
@@ -451,7 +451,7 @@ const VehicleLog: React.FC = () => {
                 )}
                 <td>{entry.vehicleStatus || 'Unknown'}</td>
                 <td>{entry.confidence}%</td>
-                {!isTableNarrow && (
+                {/* {!isTableNarrow && (
                   <td>
                     <img
                       src="/assets/PlatePlaceholder.jpg"
@@ -459,7 +459,7 @@ const VehicleLog: React.FC = () => {
                       className="vehicle-placeholder"
                     />
                   </td>
-                )}
+                )} */}
               </tr>
             );
           })}
