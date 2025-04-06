@@ -61,7 +61,7 @@ const VehicleLog: React.FC = () => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshProgress, setRefreshProgress] = useState(0);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'timestamp', direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'timestamp', direction: 'descending' });
   const [showModal, setShowModal] = useState(false);
   const [newEntry, setNewEntry] = useState({
     plateNumber: '',
@@ -182,7 +182,19 @@ const VehicleLog: React.FC = () => {
 
   const handleSort = (key: keyof AlprData | 'time') => {
     let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') direction = 'descending';
+
+    if (sortConfig.key === key) {
+      // If already sorting by this key, toggle direction
+      if (sortConfig.direction === 'ascending') {
+        direction = 'descending';
+      } else {
+        direction = 'ascending';
+      }
+    } else if (key === 'timestamp') {
+      // Default to descending (newest first) for timestamp
+      direction = 'descending';
+    }
+
     setSortConfig({ key, direction });
   };
 
@@ -361,14 +373,9 @@ const VehicleLog: React.FC = () => {
                 />
               </div>
             </th>
-            <th onClick={() => handleSort('time')} className="sortable-column">
+            <th>
               <div className="vehicle-log-header-content">
                 <span className="vehicle-log-header-text">Time</span>
-                <img
-                  src={sortConfig.key === 'time' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                  alt="Sort Arrow"
-                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'time' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
-                />
               </div>
             </th>
             <th onClick={() => handleSort('vehicleState')} className="sortable-column">
