@@ -41,6 +41,19 @@ const ALPR_API_URL = `${BASE_URL}/alpr`;
 const DEVICES_API_URL = `${BASE_URL}/devices`;
 const refreshInterval = 10000000;
 
+// Helper function to extract just the state/province name from the vehicleState
+const extractStateFromVehicleState = (vehicleState: string | undefined): string => {
+  if (!vehicleState) return 'Unknown';
+
+  // Check if the format is "Country - State"
+  const dashIndex = vehicleState.indexOf(' - ');
+  if (dashIndex !== -1) {
+    return vehicleState.substring(dashIndex + 3).trim();
+  }
+
+  return vehicleState;
+};
+
 const VehicleLog: React.FC = () => {
   const { lotId } = useParams<{ lotId: string }>();
   const [alprEntries, setAlprEntries] = useState<AlprData[]>([]);
@@ -377,7 +390,7 @@ const VehicleLog: React.FC = () => {
                 <td>{entry.plateNumber}</td>
                 <td>{date}</td>
                 <td>{time}</td>
-                <td>{entry.vehicleState || 'Unknown'}</td>
+                <td>{extractStateFromVehicleState(entry.vehicleState)}</td>
                 <td>{entry.confidence}%</td>
                 <td>
                   <img
