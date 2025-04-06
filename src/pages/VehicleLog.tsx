@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import './VehicleLog.css';
 import './RefreshBar.css';
@@ -70,6 +70,26 @@ const VehicleLog: React.FC = () => {
     vehicleStatus: 'Enter'
   });
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+  const [isTableNarrow, setIsTableNarrow] = useState(false);
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  // Check table width on resize
+  useEffect(() => {
+    const checkTableWidth = () => {
+      if (tableRef.current) {
+        setIsTableNarrow(tableRef.current.offsetWidth < 600);
+      }
+    };
+
+    // Initial check
+    checkTableWidth();
+
+    // Add resize listener
+    window.addEventListener('resize', checkTableWidth);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkTableWidth);
+  }, []);
 
   // Fetch ALPR data
   useEffect(() => {
@@ -350,10 +370,13 @@ const VehicleLog: React.FC = () => {
         </button>
       </div>
 
-      <table className={`vehicle-log-table ${alprEntries.length > 0 ? 'has-data' : ''}`}>
+      <table
+        ref={tableRef}
+        className={`vehicle-log-table ${alprEntries.length > 0 ? 'has-data' : ''}`}
+      >
         <thead>
           <tr>
-            <th onClick={() => handleSort('plateNumber')} className="sortable-column">
+            <th onClick={() => handleSort('plateNumber')} className="sortable-column" style={{ minWidth: '100px' }}>
               <div className="vehicle-log-header-content">
                 <span className="vehicle-log-header-text">Plate</span>
                 <img
@@ -378,16 +401,18 @@ const VehicleLog: React.FC = () => {
                 <span className="vehicle-log-header-text">Time</span>
               </div>
             </th>
-            <th onClick={() => handleSort('vehicleState')} className="sortable-column">
-              <div className="vehicle-log-header-content">
-                <span className="vehicle-log-header-text">Region</span>
-                <img
-                  src={sortConfig.key === 'vehicleState' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                  alt="Sort Arrow"
-                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'vehicleState' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
-                />
-              </div>
-            </th>
+            {!isTableNarrow && (
+              <th onClick={() => handleSort('vehicleState')} className="sortable-column">
+                <div className="vehicle-log-header-content">
+                  <span className="vehicle-log-header-text">Region</span>
+                  <img
+                    src={sortConfig.key === 'vehicleState' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                    alt="Sort Arrow"
+                    className={`vehicle-log-sort-arrow ${sortConfig.key === 'vehicleState' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                  />
+                </div>
+              </th>
+            )}
             <th onClick={() => handleSort('vehicleStatus')} className="sortable-column">
               <div className="vehicle-log-header-content">
                 <span className="vehicle-log-header-text">Status</span>
@@ -408,7 +433,9 @@ const VehicleLog: React.FC = () => {
                 />
               </div>
             </th>
-            <th>Image</th>
+            {!isTableNarrow && (
+              <th>Image</th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -416,19 +443,23 @@ const VehicleLog: React.FC = () => {
             const { date, time } = parseTimestamp(entry.timestamp);
             return (
               <tr key={entry.alprId || index} style={{ backgroundColor: index % 2 === 0 ? '#363941' : '#2B2E35' }}>
-                <td>{entry.plateNumber}</td>
+                <td style={{ overflow: 'visible', textOverflow: 'clip', whiteSpace: 'nowrap', minWidth: '100px' }}>{entry.plateNumber}</td>
                 <td>{date}</td>
                 <td>{time}</td>
-                <td>{extractStateFromVehicleState(entry.vehicleState)}</td>
+                {!isTableNarrow && (
+                  <td>{extractStateFromVehicleState(entry.vehicleState)}</td>
+                )}
                 <td>{entry.vehicleStatus || 'Unknown'}</td>
                 <td>{entry.confidence}%</td>
-                <td>
-                  <img
-                    src="/assets/PlatePlaceholder.jpg"
-                    alt="Vehicle Placeholder"
-                    className="vehicle-placeholder"
-                  />
-                </td>
+                {!isTableNarrow && (
+                  <td>
+                    <img
+                      src="/assets/PlatePlaceholder.jpg"
+                      alt="Vehicle Placeholder"
+                      className="vehicle-placeholder"
+                    />
+                  </td>
+                )}
               </tr>
             );
           })}
