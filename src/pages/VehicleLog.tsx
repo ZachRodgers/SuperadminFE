@@ -6,17 +6,21 @@ import { BASE_URL } from '../config/api';
 
 interface AlprData {
   alprId: string;
-  deviceId: string;
+  device: {
+    deviceId: string;
+  };
+  lot: {
+    lotId: string;
+  };
   plateNumber: string;
-  imageUrl: string;
   timestamp: string;
-  lotId: string;
   confidence: number;
-  status: string;
-  vehicleType: string;
   vehicleMake: string;
   vehicleModel: string;
-  deviceTemp: number;
+  vehicleMakeModelConfidence: number;
+  vehicleState: string;
+  vehicleStateConfidence: number;
+  vehicleRegion: string;
 }
 
 interface Device {
@@ -45,7 +49,7 @@ const VehicleLog: React.FC = () => {
   const [refreshProgress, setRefreshProgress] = useState(0);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'timestamp', direction: 'ascending' });
   const [showModal, setShowModal] = useState(false);
-  const [newEntry, setNewEntry] = useState({ plateNumber: '', timestamp: '', status: 'Enter' });
+  const [newEntry, setNewEntry] = useState({ plateNumber: '', timestamp: '', vehicleState: 'CA', vehicleRegion: 'Western US' });
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
 
   // Fetch ALPR data
@@ -113,7 +117,7 @@ const VehicleLog: React.FC = () => {
   // Sorting
   const filteredResults = alprEntries
     .filter((entry) => {
-      const norm = `${entry.plateNumber} ${entry.status} ${entry.timestamp} ${entry.confidence}`.toLowerCase();
+      const norm = `${entry.plateNumber} ${entry.vehicleState} ${entry.timestamp} ${entry.confidence} ${entry.vehicleRegion}`.toLowerCase();
       return norm.includes(searchQuery);
     })
     .sort((a, b) => {
@@ -143,10 +147,10 @@ const VehicleLog: React.FC = () => {
 
   // CSV Download
   const handleDownload = () => {
-    const header = 'PlateNumber,Date,Time,Status,Confidence\n';
+    const header = 'PlateNumber,Date,Time,VehicleState,Confidence,VehicleMake,VehicleModel,Region\n';
     const rows = filteredResults.map((e) => {
       const { date, time } = parseTimestamp(e.timestamp);
-      return `${e.plateNumber},${date},${time},${e.status},${e.confidence}`;
+      return `${e.plateNumber},${date},${time},${e.vehicleState || ''},${e.confidence},${e.vehicleMake || ''},${e.vehicleModel || ''},${e.vehicleRegion || ''}`;
     });
     const blob = new Blob([header + rows.join('\n')], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -178,7 +182,7 @@ const VehicleLog: React.FC = () => {
   };
 
   const handleAddEntry = async () => {
-    const { plateNumber, timestamp, status } = newEntry;
+    const { plateNumber, timestamp, vehicleState, vehicleRegion } = newEntry;
     if (!plateNumber) {
       alert('Please fill Plate Number');
       return;
@@ -213,14 +217,14 @@ const VehicleLog: React.FC = () => {
             lotId: lotId
           },
           plateNumber,
-          imageUrl: '',
           timestamp: finalTimestamp,
-          confidence: 101,
-          status,
-          vehicleType: 'manualentry',
-          vehicleMake: '',
-          vehicleModel: '',
-          deviceTemp: 0,
+          confidence: 100,
+          vehicleMake: 'Manual Entry',
+          vehicleModel: 'Manual Entry',
+          vehicleMakeModelConfidence: 100,
+          vehicleState,
+          vehicleStateConfidence: 100,
+          vehicleRegion
         }),
       });
 
@@ -238,7 +242,7 @@ const VehicleLog: React.FC = () => {
 
       fetchAlprData();
       setShowModal(false);
-      setNewEntry({ plateNumber: '', timestamp: '', status: 'Enter' });
+      setNewEntry({ plateNumber: '', timestamp: '', vehicleState: 'CA', vehicleRegion: 'Western US' });
     } catch (error) {
       console.error(error);
       alert('Error adding entry. Please try again or contact support.');
@@ -288,7 +292,7 @@ const VehicleLog: React.FC = () => {
           <img src="/assets/SearchBarIcon.svg" alt="Search" />
           <input
             type="text"
-            placeholder="Search Plate, Date, State, Time or Confidence"
+            placeholder="Search Plate, Date, Region, Confidence"
             value={searchQuery}
             onChange={handleSearch}
           />
@@ -342,13 +346,13 @@ const VehicleLog: React.FC = () => {
                 />
               </div>
             </th>
-            <th onClick={() => handleSort('status')} className="sortable-column">
+            <th onClick={() => handleSort('vehicleState')} className="sortable-column">
               <div className="vehicle-log-header-content">
-                <span className="vehicle-log-header-text">State</span>
+                <span className="vehicle-log-header-text">Region</span>
                 <img
-                  src={sortConfig.key === 'status' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                  src={sortConfig.key === 'vehicleState' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
                   alt="Sort Arrow"
-                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'status' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'vehicleState' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
                 />
               </div>
             </th>
@@ -373,11 +377,11 @@ const VehicleLog: React.FC = () => {
                 <td>{entry.plateNumber}</td>
                 <td>{date}</td>
                 <td>{time}</td>
-                <td>{entry.status}</td>
+                <td>{entry.vehicleState || 'Unknown'}</td>
                 <td>{entry.confidence}%</td>
                 <td>
                   <img
-                    src={entry.imageUrl ? entry.imageUrl : '/assets/PlatePlaceholder.jpg'}
+                    src="/assets/PlatePlaceholder.jpg"
                     alt="Vehicle Placeholder"
                     className="vehicle-placeholder"
                   />
@@ -420,14 +424,21 @@ const VehicleLog: React.FC = () => {
               onChange={(e) => setNewEntry({ ...newEntry, timestamp: e.target.value })}
             />
 
-            <label>State:</label>
-            <select
-              value={newEntry.status}
-              onChange={(e) => setNewEntry({ ...newEntry, status: e.target.value })}
-            >
-              <option value="Enter">Enter</option>
-              <option value="Exit">Exit</option>
-            </select>
+            <label>Vehicle State:</label>
+            <input
+              type="text"
+              value={newEntry.vehicleState}
+              onChange={(e) => setNewEntry({ ...newEntry, vehicleState: e.target.value })}
+              placeholder="CA, NY, TX, etc."
+            />
+
+            <label>Vehicle Region:</label>
+            <input
+              type="text"
+              value={newEntry.vehicleRegion}
+              onChange={(e) => setNewEntry({ ...newEntry, vehicleRegion: e.target.value })}
+              placeholder="Western US, Eastern US, etc."
+            />
 
             <div className="button-group">
               <button className="submit-button" onClick={handleAddEntry}>
