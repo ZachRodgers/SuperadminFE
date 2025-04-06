@@ -21,6 +21,7 @@ interface AlprData {
   vehicleState: string;
   vehicleStateConfidence: number;
   vehicleRegion: string;
+  vehicleStatus: string;
 }
 
 interface Device {
@@ -62,7 +63,12 @@ const VehicleLog: React.FC = () => {
   const [refreshProgress, setRefreshProgress] = useState(0);
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'timestamp', direction: 'ascending' });
   const [showModal, setShowModal] = useState(false);
-  const [newEntry, setNewEntry] = useState({ plateNumber: '', timestamp: '', vehicleState: 'CA', vehicleRegion: 'Western US' });
+  const [newEntry, setNewEntry] = useState({
+    plateNumber: '',
+    timestamp: '',
+    region: 'Western US',
+    vehicleStatus: 'Enter'
+  });
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
 
   // Fetch ALPR data
@@ -130,7 +136,7 @@ const VehicleLog: React.FC = () => {
   // Sorting
   const filteredResults = alprEntries
     .filter((entry) => {
-      const norm = `${entry.plateNumber} ${entry.vehicleState} ${entry.timestamp} ${entry.confidence} ${entry.vehicleRegion}`.toLowerCase();
+      const norm = `${entry.plateNumber} ${entry.vehicleState} ${entry.timestamp} ${entry.confidence} ${entry.vehicleRegion} ${entry.vehicleStatus}`.toLowerCase();
       return norm.includes(searchQuery);
     })
     .sort((a, b) => {
@@ -160,10 +166,10 @@ const VehicleLog: React.FC = () => {
 
   // CSV Download
   const handleDownload = () => {
-    const header = 'PlateNumber,Date,Time,VehicleState,Confidence,VehicleMake,VehicleModel,Region\n';
+    const header = 'PlateNumber,Date,Time,VehicleState,Confidence,VehicleMake,VehicleModel,Region,Status\n';
     const rows = filteredResults.map((e) => {
       const { date, time } = parseTimestamp(e.timestamp);
-      return `${e.plateNumber},${date},${time},${e.vehicleState || ''},${e.confidence},${e.vehicleMake || ''},${e.vehicleModel || ''},${e.vehicleRegion || ''}`;
+      return `${e.plateNumber},${date},${time},${e.vehicleState || ''},${e.confidence},${e.vehicleMake || ''},${e.vehicleModel || ''},${e.vehicleRegion || ''},${e.vehicleStatus || ''}`;
     });
     const blob = new Blob([header + rows.join('\n')], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -195,7 +201,7 @@ const VehicleLog: React.FC = () => {
   };
 
   const handleAddEntry = async () => {
-    const { plateNumber, timestamp, vehicleState, vehicleRegion } = newEntry;
+    const { plateNumber, timestamp, region, vehicleStatus } = newEntry;
     if (!plateNumber) {
       alert('Please fill Plate Number');
       return;
@@ -235,9 +241,10 @@ const VehicleLog: React.FC = () => {
           vehicleMake: 'Manual Entry',
           vehicleModel: 'Manual Entry',
           vehicleMakeModelConfidence: 100,
-          vehicleState,
-          vehicleStateConfidence: 100,
-          vehicleRegion
+          vehicleState: region,
+          vehicleStateConfidence: 101,
+          vehicleRegion: 'Manual Entry',
+          vehicleStatus
         }),
       });
 
@@ -255,7 +262,12 @@ const VehicleLog: React.FC = () => {
 
       fetchAlprData();
       setShowModal(false);
-      setNewEntry({ plateNumber: '', timestamp: '', vehicleState: 'CA', vehicleRegion: 'Western US' });
+      setNewEntry({
+        plateNumber: '',
+        timestamp: '',
+        region: 'Western US',
+        vehicleStatus: 'Enter'
+      });
     } catch (error) {
       console.error(error);
       alert('Error adding entry. Please try again or contact support.');
@@ -369,6 +381,16 @@ const VehicleLog: React.FC = () => {
                 />
               </div>
             </th>
+            <th onClick={() => handleSort('vehicleStatus')} className="sortable-column">
+              <div className="vehicle-log-header-content">
+                <span className="vehicle-log-header-text">Status</span>
+                <img
+                  src={sortConfig.key === 'vehicleStatus' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                  alt="Sort Arrow"
+                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'vehicleStatus' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                />
+              </div>
+            </th>
             <th onClick={() => handleSort('confidence')} className="sortable-column">
               <div className="vehicle-log-header-content">
                 <span className="vehicle-log-header-text">Confidence</span>
@@ -391,6 +413,7 @@ const VehicleLog: React.FC = () => {
                 <td>{date}</td>
                 <td>{time}</td>
                 <td>{extractStateFromVehicleState(entry.vehicleState)}</td>
+                <td>{entry.vehicleStatus || 'Unknown'}</td>
                 <td>{entry.confidence}%</td>
                 <td>
                   <img
@@ -437,21 +460,22 @@ const VehicleLog: React.FC = () => {
               onChange={(e) => setNewEntry({ ...newEntry, timestamp: e.target.value })}
             />
 
-            <label>Vehicle State:</label>
+            <label>Region:</label>
             <input
               type="text"
-              value={newEntry.vehicleState}
-              onChange={(e) => setNewEntry({ ...newEntry, vehicleState: e.target.value })}
-              placeholder="CA, NY, TX, etc."
-            />
-
-            <label>Vehicle Region:</label>
-            <input
-              type="text"
-              value={newEntry.vehicleRegion}
-              onChange={(e) => setNewEntry({ ...newEntry, vehicleRegion: e.target.value })}
+              value={newEntry.region}
+              onChange={(e) => setNewEntry({ ...newEntry, region: e.target.value })}
               placeholder="Western US, Eastern US, etc."
             />
+
+            <label>Status:</label>
+            <select
+              value={newEntry.vehicleStatus}
+              onChange={(e) => setNewEntry({ ...newEntry, vehicleStatus: e.target.value })}
+            >
+              <option value="Enter">Enter</option>
+              <option value="Exit">Exit</option>
+            </select>
 
             <div className="button-group">
               <button className="submit-button" onClick={handleAddEntry}>
