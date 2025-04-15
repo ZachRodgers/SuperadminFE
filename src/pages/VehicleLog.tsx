@@ -22,6 +22,15 @@ interface AlprData {
   vehicleStateConfidence: number;
   vehicleRegion: string;
   vehicleStatus: string;
+  laneType: string;
+  distanceChange: number;
+  vehicleColour: string;
+  vehicleColourConfidence: number;
+  plateColour: string;
+  plateCharacterColour: string;
+  vehicleView: string;
+  vehicleViewConfidence: number;
+  fullImage: string;
 }
 
 interface Device {
@@ -72,6 +81,8 @@ const VehicleLog: React.FC = () => {
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
   const [isTableNarrow, setIsTableNarrow] = useState(false);
   const tableRef = useRef<HTMLTableElement>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<AlprData | null>(null);
 
   // Check table width on resize
   useEffect(() => {
@@ -293,7 +304,16 @@ const VehicleLog: React.FC = () => {
           vehicleState: region,
           vehicleStateConfidence: 101,
           vehicleRegion: 'Manual Entry',
-          vehicleStatus
+          vehicleStatus,
+          laneType: vehicleStatus,
+          distanceChange: 0,
+          vehicleColour: 'N/A',
+          vehicleColourConfidence: 0,
+          plateColour: 'N/A',
+          plateCharacterColour: 'N/A',
+          vehicleView: 'N/A',
+          vehicleViewConfidence: 0,
+          fullImage: ''
         }),
       });
 
@@ -346,6 +366,18 @@ const VehicleLog: React.FC = () => {
       console.error('Error clearing ALPR data:', error);
       alert('Failed to clear ALPR data. Please try again or contact support.');
     }
+  };
+
+  // Show detail modal when a row is clicked
+  const handleRowClick = (entry: AlprData) => {
+    setSelectedEntry(entry);
+    setShowDetailModal(true);
+  };
+
+  // Close detail modal when clicking outside
+  const handleDetailModalClose = () => {
+    setShowDetailModal(false);
+    setSelectedEntry(null);
   };
 
   return (
@@ -450,16 +482,18 @@ const VehicleLog: React.FC = () => {
                 />
               </div>
             </th>
-            {/* {!isTableNarrow && (
-              <th>Image</th>
-            )} */}
           </tr>
         </thead>
         <tbody>
           {filteredResults.map((entry, index) => {
             const { date, time } = parseTimestamp(entry.timestamp);
             return (
-              <tr key={entry.alprId || index} style={{ backgroundColor: index % 2 === 0 ? '#363941' : '#2B2E35' }}>
+              <tr 
+                key={entry.alprId || index} 
+                style={{ backgroundColor: index % 2 === 0 ? '#363941' : '#2B2E35' }}
+                onClick={() => handleRowClick(entry)}
+                className="clickable-row"
+              >
                 <td style={{ overflow: 'visible', textOverflow: 'clip', whiteSpace: 'nowrap', minWidth: '100px' }}>{entry.plateNumber}</td>
                 <td>{date}</td>
                 <td>{time}</td>
@@ -468,15 +502,6 @@ const VehicleLog: React.FC = () => {
                 )}
                 <td>{entry.vehicleStatus || 'Unknown'}</td>
                 <td>{entry.confidence}%</td>
-                {/* {!isTableNarrow && (
-                  <td>
-                    <img
-                      src="/assets/PlatePlaceholder.jpg"
-                      alt="Vehicle Placeholder"
-                      className="vehicle-placeholder"
-                    />
-                  </td>
-                )} */}
               </tr>
             );
           })}
@@ -558,6 +583,112 @@ const VehicleLog: React.FC = () => {
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showDetailModal && selectedEntry && (
+        <div className="modal-overlay" onClick={handleDetailModalClose}>
+          <div className="modal-content detail-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Vehicle Details</h2>
+            <div className="detail-grid">
+              <div className="detail-column">
+                <div className="detail-item">
+                  <span className="detail-label">ALPR ID:</span>
+                  <span className="detail-value">{selectedEntry.alprId}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Device ID:</span>
+                  <span className="detail-value">{selectedEntry.device?.deviceId || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Lot ID:</span>
+                  <span className="detail-value">{selectedEntry.lot?.lotId || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Plate Number:</span>
+                  <span className="detail-value">{selectedEntry.plateNumber}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Timestamp:</span>
+                  <span className="detail-value">{new Date(selectedEntry.timestamp).toLocaleString()}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Lane Type:</span>
+                  <span className="detail-value">{selectedEntry.laneType || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Distance Change:</span>
+                  <span className="detail-value">{selectedEntry.distanceChange || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Vehicle Status:</span>
+                  <span className="detail-value">{selectedEntry.vehicleStatus || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Confidence:</span>
+                  <span className="detail-value">{selectedEntry.confidence}%</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Vehicle Make:</span>
+                  <span className="detail-value">{selectedEntry.vehicleMake || 'N/A'}</span>
+                </div>
+              </div>
+              <div className="detail-column">
+                <div className="detail-item">
+                  <span className="detail-label">Vehicle Model:</span>
+                  <span className="detail-value">{selectedEntry.vehicleModel || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Make/Model Confidence:</span>
+                  <span className="detail-value">{selectedEntry.vehicleMakeModelConfidence || 'N/A'}%</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Vehicle Color:</span>
+                  <span className="detail-value">{selectedEntry.vehicleColour || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Vehicle Color Confidence:</span>
+                  <span className="detail-value">{selectedEntry.vehicleColourConfidence || 'N/A'}%</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Plate Color:</span>
+                  <span className="detail-value">{selectedEntry.plateColour || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Plate Character Color:</span>
+                  <span className="detail-value">{selectedEntry.plateCharacterColour || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Vehicle State:</span>
+                  <span className="detail-value">{selectedEntry.vehicleState || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">State Confidence:</span>
+                  <span className="detail-value">{selectedEntry.vehicleStateConfidence || 'N/A'}%</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Vehicle Region:</span>
+                  <span className="detail-value">{selectedEntry.vehicleRegion || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Vehicle View:</span>
+                  <span className="detail-value">{selectedEntry.vehicleView || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">View Confidence:</span>
+                  <span className="detail-value">{selectedEntry.vehicleViewConfidence || 'N/A'}%</span>
+                </div>
+              </div>
+            </div>
+            {selectedEntry.fullImage && (
+              <div className="detail-image">
+                <img src={selectedEntry.fullImage} alt="Vehicle" />
+              </div>
+            )}
+            <button className="close-button" onClick={handleDetailModalClose}>
+              Close
+            </button>
           </div>
         </div>
       )}
