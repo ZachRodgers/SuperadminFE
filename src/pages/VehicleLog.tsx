@@ -214,10 +214,10 @@ const VehicleLog: React.FC = () => {
 
   // CSV Download
   const handleDownload = () => {
-    const header = 'PlateNumber,Date,Time,VehicleState,Confidence,VehicleMake,VehicleModel,Region,Status\n';
+    const header = 'PlateNumber,Date,Time,VehicleState,Confidence,VehicleMake,VehicleModel,VehicleStatus,LaneType,DistanceChange,VehicleColour,VehicleColourConfidence,PlateColour,PlateCharacterColour,VehicleRegion,VehicleView,VehicleViewConfidence\n';
     const rows = filteredResults.map((e) => {
       const { date, time } = parseTimestamp(e.timestamp);
-      return `${e.plateNumber},${date},${time},${e.vehicleState || ''},${e.confidence},${e.vehicleMake || ''},${e.vehicleModel || ''},${e.vehicleRegion || ''},${e.vehicleStatus || ''}`;
+      return `${e.plateNumber},${date},${time},${e.vehicleState || ''},${e.confidence},${e.vehicleMake || ''},${e.vehicleModel || ''},${e.vehicleStatus || ''},${e.laneType || ''},${e.distanceChange || ''},${e.vehicleColour || ''},${e.vehicleColourConfidence || ''},${e.plateColour || ''},${e.plateCharacterColour || ''},${e.vehicleRegion || ''},${e.vehicleView || ''},${e.vehicleViewConfidence || ''}`;
     });
     const blob = new Blob([header + rows.join('\n')], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -288,32 +288,25 @@ const VehicleLog: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          alprId: nextId,
-          device: {
-            deviceId: chosenDevice.deviceId
-          },
-          lot: {
-            lotId: lotId
-          },
-          plateNumber,
+          deviceId: chosenDevice.deviceId,
+          lotId: lotId,
+          laneType: vehicleStatus, // Using vehicleStatus (Enter/Exit) as laneType
+          distanceChange: 2,
           timestamp: finalTimestamp,
+          plateNumber,
           confidence: 101,
-          vehicleMake: 'Manual Entry',
-          vehicleModel: 'Manual Entry',
-          vehicleMakeModelConfidence: 101,
-          vehicleState: region,
-          vehicleStateConfidence: 101,
-          vehicleRegion: 'Manual Entry',
-          vehicleStatus,
-          laneType: vehicleStatus,
-          distanceChange: 0,
+          vehicleMake: 'N/A',
+          vehicleModel: 'N/A',
+          vehicleMakeModelConfidence: 0,
           vehicleColour: 'N/A',
           vehicleColourConfidence: 0,
           plateColour: 'N/A',
           plateCharacterColour: 'N/A',
+          vehicleState: region,
+          vehicleStateConfidence: 0,
+          vehicleRegion: 'N/A',
           vehicleView: 'N/A',
-          vehicleViewConfidence: 0,
-          fullImage: ''
+          vehicleViewConfidence: 0
         }),
       });
 
@@ -686,9 +679,6 @@ const VehicleLog: React.FC = () => {
                 <img src={selectedEntry.fullImage} alt="Vehicle" />
               </div>
             )}
-            <button className="close-button" onClick={handleDetailModalClose}>
-              Close
-            </button>
           </div>
         </div>
       )}
