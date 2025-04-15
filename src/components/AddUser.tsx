@@ -161,7 +161,7 @@ const AddUser: React.FC<AddUserProps> = ({ isOpen, onClose, onConfirm, currentOw
         },
         body: JSON.stringify({
           name: newUser.name,
-          email: newUser.email,
+          email: newUser.email.toLowerCase(),
           password: newUser.password,
           phoneNo: newUser.phoneNo,
           role: newUser.role,

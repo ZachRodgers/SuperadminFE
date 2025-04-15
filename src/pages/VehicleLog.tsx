@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import './VehicleLog.css';
 import './RefreshBar.css';
@@ -6,17 +6,22 @@ import { BASE_URL } from '../config/api';
 
 interface AlprData {
   alprId: string;
-  deviceId: string;
+  device: {
+    deviceId: string;
+  };
+  lot: {
+    lotId: string;
+  };
   plateNumber: string;
-  imageUrl: string;
   timestamp: string;
-  lotId: string;
   confidence: number;
-  status: string;
-  vehicleType: string;
   vehicleMake: string;
   vehicleModel: string;
-  deviceTemp: number;
+  vehicleMakeModelConfidence: number;
+  vehicleState: string;
+  vehicleStateConfidence: number;
+  vehicleRegion: string;
+  vehicleStatus: string;
 }
 
 interface Device {
@@ -35,7 +40,20 @@ interface SortConfig {
 
 const ALPR_API_URL = `${BASE_URL}/alpr`;
 const DEVICES_API_URL = `${BASE_URL}/devices`;
-const refreshInterval = 10000000;
+const refreshInterval = 100000000;
+
+// Helper function to extract just the state/province name from the vehicleState
+const extractStateFromVehicleState = (vehicleState: string | undefined): string => {
+  if (!vehicleState) return 'Unknown';
+
+  // Check if the format is "Country - State"
+  const dashIndex = vehicleState.indexOf(' - ');
+  if (dashIndex !== -1) {
+    return vehicleState.substring(dashIndex + 3).trim();
+  }
+
+  return vehicleState;
+};
 
 const VehicleLog: React.FC = () => {
   const { lotId } = useParams<{ lotId: string }>();
@@ -43,10 +61,35 @@ const VehicleLog: React.FC = () => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshProgress, setRefreshProgress] = useState(0);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'timestamp', direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'timestamp', direction: 'descending' });
   const [showModal, setShowModal] = useState(false);
-  const [newEntry, setNewEntry] = useState({ plateNumber: '', timestamp: '', status: 'Enter' });
+  const [newEntry, setNewEntry] = useState({
+    plateNumber: '',
+    timestamp: '',
+    region: 'Test',
+    vehicleStatus: 'Enter'
+  });
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+  const [isTableNarrow, setIsTableNarrow] = useState(false);
+  const tableRef = useRef<HTMLTableElement>(null);
+
+  // Check table width on resize
+  useEffect(() => {
+    const checkTableWidth = () => {
+      if (tableRef.current) {
+        setIsTableNarrow(tableRef.current.offsetWidth < 600);
+      }
+    };
+
+    // Initial check
+    checkTableWidth();
+
+    // Add resize listener
+    window.addEventListener('resize', checkTableWidth);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', checkTableWidth);
+  }, []);
 
   // Fetch ALPR data
   useEffect(() => {
@@ -105,7 +148,24 @@ const VehicleLog: React.FC = () => {
   // Format date/time
   const parseTimestamp = (ts: string) => {
     const d = new Date(ts);
-    const date = d.toISOString().split('T')[0];
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Format date based on whether it's today, yesterday, or another day
+    let date;
+    if (d.toDateString() === now.toDateString()) {
+      date = 'Today';
+    } else if (d.toDateString() === yesterday.toDateString()) {
+      date = 'Yesterday';
+    } else {
+      // Format as M-D-Y with only last 2 digits of year
+      const month = (d.getMonth() + 1).toString().padStart(2, '0');
+      const day = d.getDate().toString().padStart(2, '0');
+      const year = d.getFullYear().toString().slice(-2); // Get only last 2 digits of year
+      date = `${month}-${day}-${year}`;
+    }
+
     const time = d.toLocaleTimeString('en-US', { hour12: false });
     return { date, time };
   };
@@ -113,7 +173,7 @@ const VehicleLog: React.FC = () => {
   // Sorting
   const filteredResults = alprEntries
     .filter((entry) => {
-      const norm = `${entry.plateNumber} ${entry.status} ${entry.timestamp} ${entry.confidence}`.toLowerCase();
+      const norm = `${entry.plateNumber} ${entry.vehicleState} ${entry.timestamp} ${entry.confidence} ${entry.vehicleRegion} ${entry.vehicleStatus}`.toLowerCase();
       return norm.includes(searchQuery);
     })
     .sort((a, b) => {
@@ -143,10 +203,10 @@ const VehicleLog: React.FC = () => {
 
   // CSV Download
   const handleDownload = () => {
-    const header = 'PlateNumber,Date,Time,Status,Confidence\n';
+    const header = 'PlateNumber,Date,Time,VehicleState,Confidence,VehicleMake,VehicleModel,Region,Status\n';
     const rows = filteredResults.map((e) => {
       const { date, time } = parseTimestamp(e.timestamp);
-      return `${e.plateNumber},${date},${time},${e.status},${e.confidence}`;
+      return `${e.plateNumber},${date},${time},${e.vehicleState || ''},${e.confidence},${e.vehicleMake || ''},${e.vehicleModel || ''},${e.vehicleRegion || ''},${e.vehicleStatus || ''}`;
     });
     const blob = new Blob([header + rows.join('\n')], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -159,7 +219,19 @@ const VehicleLog: React.FC = () => {
 
   const handleSort = (key: keyof AlprData | 'time') => {
     let direction: 'ascending' | 'descending' = 'ascending';
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') direction = 'descending';
+
+    if (sortConfig.key === key) {
+      // If already sorting by this key, toggle direction
+      if (sortConfig.direction === 'ascending') {
+        direction = 'descending';
+      } else {
+        direction = 'ascending';
+      }
+    } else if (key === 'timestamp') {
+      // Default to descending (newest first) for timestamp
+      direction = 'descending';
+    }
+
     setSortConfig({ key, direction });
   };
 
@@ -178,7 +250,7 @@ const VehicleLog: React.FC = () => {
   };
 
   const handleAddEntry = async () => {
-    const { plateNumber, timestamp, status } = newEntry;
+    const { plateNumber, timestamp, region, vehicleStatus } = newEntry;
     if (!plateNumber) {
       alert('Please fill Plate Number');
       return;
@@ -213,14 +285,15 @@ const VehicleLog: React.FC = () => {
             lotId: lotId
           },
           plateNumber,
-          imageUrl: '',
           timestamp: finalTimestamp,
           confidence: 101,
-          status,
-          vehicleType: 'manualentry',
-          vehicleMake: '',
-          vehicleModel: '',
-          deviceTemp: 0,
+          vehicleMake: 'Manual Entry',
+          vehicleModel: 'Manual Entry',
+          vehicleMakeModelConfidence: 101,
+          vehicleState: region,
+          vehicleStateConfidence: 101,
+          vehicleRegion: 'Manual Entry',
+          vehicleStatus
         }),
       });
 
@@ -238,7 +311,12 @@ const VehicleLog: React.FC = () => {
 
       fetchAlprData();
       setShowModal(false);
-      setNewEntry({ plateNumber: '', timestamp: '', status: 'Enter' });
+      setNewEntry({
+        plateNumber: '',
+        timestamp: '',
+        region: 'Test',
+        vehicleStatus: 'Enter'
+      });
     } catch (error) {
       console.error(error);
       alert('Error adding entry. Please try again or contact support.');
@@ -277,7 +355,7 @@ const VehicleLog: React.FC = () => {
           <div className="refresh-bar-fill" style={{ width: `${refreshProgress}%` }}></div>
         </div>
         <div className="refresh-text" onClick={handleManualRefresh}>
-          {refreshProgress < 100 ? 'Refreshing...' : 'Manual Refresh'}
+          {refreshProgress < 100 ? 'Refresh' : 'Manual Refresh'}
         </div>
       </div>
 
@@ -288,7 +366,7 @@ const VehicleLog: React.FC = () => {
           <img src="/assets/SearchBarIcon.svg" alt="Search" />
           <input
             type="text"
-            placeholder="Search Plate, Date, State, Time or Confidence"
+            placeholder="Search Plate, Date, Region, Confidence"
             value={searchQuery}
             onChange={handleSearch}
           />
@@ -309,10 +387,13 @@ const VehicleLog: React.FC = () => {
         </button>
       </div>
 
-      <table className={`vehicle-log-table ${alprEntries.length > 0 ? 'has-data' : ''}`}>
+      <table
+        ref={tableRef}
+        className={`vehicle-log-table ${alprEntries.length > 0 ? 'has-data' : ''}`}
+      >
         <thead>
           <tr>
-            <th onClick={() => handleSort('plateNumber')} className="sortable-column">
+            <th onClick={() => handleSort('plateNumber')} className="sortable-column" style={{ minWidth: '100px' }}>
               <div className="vehicle-log-header-content">
                 <span className="vehicle-log-header-text">Plate</span>
                 <img
@@ -332,23 +413,30 @@ const VehicleLog: React.FC = () => {
                 />
               </div>
             </th>
-            <th onClick={() => handleSort('time')} className="sortable-column">
+            <th>
               <div className="vehicle-log-header-content">
                 <span className="vehicle-log-header-text">Time</span>
-                <img
-                  src={sortConfig.key === 'time' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                  alt="Sort Arrow"
-                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'time' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
-                />
               </div>
             </th>
-            <th onClick={() => handleSort('status')} className="sortable-column">
+            {!isTableNarrow && (
+              <th onClick={() => handleSort('vehicleState')} className="sortable-column">
+                <div className="vehicle-log-header-content">
+                  <span className="vehicle-log-header-text">Region</span>
+                  <img
+                    src={sortConfig.key === 'vehicleState' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                    alt="Sort Arrow"
+                    className={`vehicle-log-sort-arrow ${sortConfig.key === 'vehicleState' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                  />
+                </div>
+              </th>
+            )}
+            <th onClick={() => handleSort('vehicleStatus')} className="sortable-column">
               <div className="vehicle-log-header-content">
-                <span className="vehicle-log-header-text">State</span>
+                <span className="vehicle-log-header-text">Status</span>
                 <img
-                  src={sortConfig.key === 'status' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                  src={sortConfig.key === 'vehicleStatus' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
                   alt="Sort Arrow"
-                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'status' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'vehicleStatus' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
                 />
               </div>
             </th>
@@ -362,7 +450,9 @@ const VehicleLog: React.FC = () => {
                 />
               </div>
             </th>
-            <th>Image</th>
+            {/* {!isTableNarrow && (
+              <th>Image</th>
+            )} */}
           </tr>
         </thead>
         <tbody>
@@ -370,18 +460,23 @@ const VehicleLog: React.FC = () => {
             const { date, time } = parseTimestamp(entry.timestamp);
             return (
               <tr key={entry.alprId || index} style={{ backgroundColor: index % 2 === 0 ? '#363941' : '#2B2E35' }}>
-                <td>{entry.plateNumber}</td>
+                <td style={{ overflow: 'visible', textOverflow: 'clip', whiteSpace: 'nowrap', minWidth: '100px' }}>{entry.plateNumber}</td>
                 <td>{date}</td>
                 <td>{time}</td>
-                <td>{entry.status}</td>
+                {!isTableNarrow && (
+                  <td>{extractStateFromVehicleState(entry.vehicleState)}</td>
+                )}
+                <td>{entry.vehicleStatus || 'Unknown'}</td>
                 <td>{entry.confidence}%</td>
-                <td>
-                  <img
-                    src={entry.imageUrl ? entry.imageUrl : '/assets/PlatePlaceholder.jpg'}
-                    alt="Vehicle Placeholder"
-                    className="vehicle-placeholder"
-                  />
-                </td>
+                {/* {!isTableNarrow && (
+                  <td>
+                    <img
+                      src="/assets/PlatePlaceholder.jpg"
+                      alt="Vehicle Placeholder"
+                      className="vehicle-placeholder"
+                    />
+                  </td>
+                )} */}
               </tr>
             );
           })}
@@ -420,10 +515,18 @@ const VehicleLog: React.FC = () => {
               onChange={(e) => setNewEntry({ ...newEntry, timestamp: e.target.value })}
             />
 
-            <label>State:</label>
+            <label>Region:</label>
+            <input
+              type="text"
+              value={newEntry.region}
+              onChange={(e) => setNewEntry({ ...newEntry, region: e.target.value })}
+              placeholder="Ottawa, Florida, etc."
+            />
+
+            <label>Status:</label>
             <select
-              value={newEntry.status}
-              onChange={(e) => setNewEntry({ ...newEntry, status: e.target.value })}
+              value={newEntry.vehicleStatus}
+              onChange={(e) => setNewEntry({ ...newEntry, vehicleStatus: e.target.value })}
             >
               <option value="Enter">Enter</option>
               <option value="Exit">Exit</option>

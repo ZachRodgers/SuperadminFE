@@ -5,22 +5,35 @@ import './Login.css';
 const Login: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<React.ReactNode>(null);
 
   const handleLogin = async () => {
     try {
       // This calls our Spring Boot /login endpoint
       const response = await api.post('/login', {
-        email: username,
+        email: username.toLowerCase(),
         password: password
       });
 
-      // We expect { "token": "...", "userId": "..." }
-      const { token, userId } = response.data;
+      // We expect { "token": "...", "userId": "...", "role": "..." }
+      const { token, userId, role } = response.data;
+
+      // Only SuperAdmin role is allowed to log in
+      if (role !== "SuperAdmin") {
+        if (role === "Operator") {
+          setError(<>
+            Permission Denied. Please try <a href="https://operator.parkwithparallel.com/login" target="_blank" rel="noopener noreferrer" style={{ color: '#ffbfbf' }}>Operator Portal</a>
+          </>);
+        } else {
+          setError("Permission Denied");
+        }
+        return;
+      }
 
       // Store them in localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('userId', userId);
+      localStorage.setItem('role', role);
       localStorage.setItem('isAuthenticated', 'true');
 
       // Redirect, for example to /dashboard
