@@ -351,7 +351,7 @@ const DeviceManager: React.FC = () => {
                       href={`http://${parsed.network}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-white/75 hover:text-white hover:underline"
+                      className="ip=link"
                       >
                   {parsed.network}
                   </a>

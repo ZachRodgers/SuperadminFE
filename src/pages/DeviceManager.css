@@ -165,3 +165,13 @@
   color: #ffffff;
   font-weight: 600;
 }
+.ip-link {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.ip-link:hover {
+  color: rgba(255, 255, 255, 1);
+  text-decoration: underline;
+}
