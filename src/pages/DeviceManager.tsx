@@ -347,7 +347,9 @@ const DeviceManager: React.FC = () => {
                   <p>
                     Network
                     <br />
-                    {parsed.network}
+                    <a href={`http://${parsed.network}`} target="_blank" rel="noopener noreferrer">
+                      {parsed.network}
+                    </a>
                   </p>
                 </div>
                 <div className="remove-device">
