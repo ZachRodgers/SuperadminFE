@@ -510,7 +510,7 @@ const VehicleLog: React.FC = () => {
       ) : (
         <div className="clear-all-container">
           <button className="clear-all-button" onClick={() => setShowClearConfirmModal(true)}>
-            Clear All
+            Clear All ({filteredResults.length})
           </button>
         </div>
       )}
