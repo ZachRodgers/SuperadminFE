@@ -306,7 +306,8 @@ const VehicleLog: React.FC = () => {
           vehicleStateConfidence: 0,
           vehicleRegion: 'N/A',
           vehicleView: 'N/A',
-          vehicleViewConfidence: 0
+          vehicleViewConfidence: 0,
+          fullImage: 'N/A' // Adding fullImage as N/A for manual entries
         }),
       });
 
@@ -674,9 +675,13 @@ const VehicleLog: React.FC = () => {
                 </div>
               </div>
             </div>
-            {selectedEntry.fullImage && (
+            {selectedEntry.fullImage && selectedEntry.fullImage !== 'N/A' && (
               <div className="detail-image">
-                <img src={selectedEntry.fullImage} alt="Vehicle" />
+                <img 
+                  src={`data:image/jpeg;base64,${selectedEntry.fullImage}`} 
+                  alt="Vehicle" 
+                  style={{ maxWidth: '120px', height: 'auto' }}
+                />
               </div>
             )}
           </div>
