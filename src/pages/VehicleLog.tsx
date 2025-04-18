@@ -385,136 +385,140 @@ const VehicleLog: React.FC = () => {
         </div>
       </div>
 
-      <h1>Vehicle Log</h1>
+      <div className="vehicle-log-fixed-header">
+        <h1>Vehicle Log</h1>
 
-      <div className="search-and-download">
-        <div className="search-bar">
-          <img src="/assets/SearchBarIcon.svg" alt="Search" />
-          <input
-            type="text"
-            placeholder="Search Plate, Date, Region, Confidence"
-            value={searchQuery}
-            onChange={handleSearch}
-          />
+        <div className="search-and-download">
+          <div className="search-bar">
+            <img src="/assets/SearchBarIcon.svg" alt="Search" />
+            <input
+              type="text"
+              placeholder="Search Plate, Date, Region, Confidence"
+              value={searchQuery}
+              onChange={handleSearch}
+            />
+          </div>
+
+          <button className="download-button" onClick={handleDownload}>
+            <span className="button-text">
+              <span className="full-text">Download as Sheet</span>
+              <span className="short-text">Download</span>
+            </span>
+          </button>
+
+          <button className="download-button" onClick={() => setShowModal(true)} style={{ marginRight: '0' }}>
+            <span className="button-text">
+              <span className="full-text">Add Manual Entry</span>
+              <span className="short-text">+ Entry</span>
+            </span>
+          </button>
         </div>
-
-        <button className="download-button" onClick={handleDownload}>
-          <span className="button-text">
-            <span className="full-text">Download as Sheet</span>
-            <span className="short-text">Download</span>
-          </span>
-        </button>
-
-        <button className="download-button" onClick={() => setShowModal(true)} style={{ marginRight: '0' }}>
-          <span className="button-text">
-            <span className="full-text">Add Manual Entry</span>
-            <span className="short-text">+ Entry</span>
-          </span>
-        </button>
       </div>
 
-      <table
-        ref={tableRef}
-        className={`vehicle-log-table ${alprEntries.length > 0 ? 'has-data' : ''}`}
-      >
-        <thead>
-          <tr>
-            <th onClick={() => handleSort('plateNumber')} className="sortable-column" style={{ minWidth: '100px' }}>
-              <div className="vehicle-log-header-content">
-                <span className="vehicle-log-header-text">Plate</span>
-                <img
-                  src={sortConfig.key === 'plateNumber' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                  alt="Sort Arrow"
-                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'plateNumber' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
-                />
-              </div>
-            </th>
-            <th onClick={() => handleSort('timestamp')} className="sortable-column">
-              <div className="vehicle-log-header-content">
-                <span className="vehicle-log-header-text">Date</span>
-                <img
-                  src={sortConfig.key === 'timestamp' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                  alt="Sort Arrow"
-                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'timestamp' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
-                />
-              </div>
-            </th>
-            <th>
-              <div className="vehicle-log-header-content">
-                <span className="vehicle-log-header-text">Time</span>
-              </div>
-            </th>
-            {!isTableNarrow && (
-              <th onClick={() => handleSort('vehicleState')} className="sortable-column">
+      <div className="vehicle-log-content">
+        <table
+          ref={tableRef}
+          className={`vehicle-log-table ${alprEntries.length > 0 ? 'has-data' : ''}`}
+        >
+          <thead>
+            <tr>
+              <th onClick={() => handleSort('plateNumber')} className="sortable-column" style={{ minWidth: '100px' }}>
                 <div className="vehicle-log-header-content">
-                  <span className="vehicle-log-header-text">Region</span>
+                  <span className="vehicle-log-header-text">Plate</span>
                   <img
-                    src={sortConfig.key === 'vehicleState' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                    src={sortConfig.key === 'plateNumber' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
                     alt="Sort Arrow"
-                    className={`vehicle-log-sort-arrow ${sortConfig.key === 'vehicleState' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                    className={`vehicle-log-sort-arrow ${sortConfig.key === 'plateNumber' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
                   />
                 </div>
               </th>
-            )}
-            <th onClick={() => handleSort('vehicleStatus')} className="sortable-column">
-              <div className="vehicle-log-header-content">
-                <span className="vehicle-log-header-text">Status</span>
-                <img
-                  src={sortConfig.key === 'vehicleStatus' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                  alt="Sort Arrow"
-                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'vehicleStatus' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
-                />
-              </div>
-            </th>
-            <th onClick={() => handleSort('confidence')} className="sortable-column">
-              <div className="vehicle-log-header-content">
-                <span className="vehicle-log-header-text">Confidence</span>
-                <img
-                  src={sortConfig.key === 'confidence' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
-                  alt="Sort Arrow"
-                  className={`vehicle-log-sort-arrow ${sortConfig.key === 'confidence' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
-                />
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredResults.map((entry, index) => {
-            const { date, time } = parseTimestamp(entry.timestamp);
-            return (
-              <tr 
-                key={entry.alprId || index} 
-                style={{ backgroundColor: index % 2 === 0 ? '#363941' : '#2B2E35' }}
-                onClick={() => handleRowClick(entry)}
-                className="clickable-row"
-              >
-                <td style={{ overflow: 'visible', textOverflow: 'clip', whiteSpace: 'nowrap', minWidth: '100px' }}>{entry.plateNumber}</td>
-                <td>{date}</td>
-                <td>{time}</td>
-                {!isTableNarrow && (
-                  <td>{extractStateFromVehicleState(entry.vehicleState)}</td>
-                )}
-                <td>{entry.vehicleStatus || 'Unknown'}</td>
-                <td>{entry.confidence}%</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+              <th onClick={() => handleSort('timestamp')} className="sortable-column">
+                <div className="vehicle-log-header-content">
+                  <span className="vehicle-log-header-text">Date</span>
+                  <img
+                    src={sortConfig.key === 'timestamp' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                    alt="Sort Arrow"
+                    className={`vehicle-log-sort-arrow ${sortConfig.key === 'timestamp' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                  />
+                </div>
+              </th>
+              <th>
+                <div className="vehicle-log-header-content">
+                  <span className="vehicle-log-header-text">Time</span>
+                </div>
+              </th>
+              {!isTableNarrow && (
+                <th onClick={() => handleSort('vehicleState')} className="sortable-column">
+                  <div className="vehicle-log-header-content">
+                    <span className="vehicle-log-header-text">Region</span>
+                    <img
+                      src={sortConfig.key === 'vehicleState' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                      alt="Sort Arrow"
+                      className={`vehicle-log-sort-arrow ${sortConfig.key === 'vehicleState' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                    />
+                  </div>
+                </th>
+              )}
+              <th onClick={() => handleSort('vehicleStatus')} className="sortable-column">
+                <div className="vehicle-log-header-content">
+                  <span className="vehicle-log-header-text">Status</span>
+                  <img
+                    src={sortConfig.key === 'vehicleStatus' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                    alt="Sort Arrow"
+                    className={`vehicle-log-sort-arrow ${sortConfig.key === 'vehicleStatus' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                  />
+                </div>
+              </th>
+              <th onClick={() => handleSort('confidence')} className="sortable-column">
+                <div className="vehicle-log-header-content">
+                  <span className="vehicle-log-header-text">Confidence</span>
+                  <img
+                    src={sortConfig.key === 'confidence' ? '/assets/FilterArrowSelected.svg' : '/assets/FilterArrow.svg'}
+                    alt="Sort Arrow"
+                    className={`vehicle-log-sort-arrow ${sortConfig.key === 'confidence' && sortConfig.direction === 'descending' ? 'descending' : ''}`}
+                  />
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredResults.map((entry, index) => {
+              const { date, time } = parseTimestamp(entry.timestamp);
+              return (
+                <tr 
+                  key={entry.alprId || index} 
+                  style={{ backgroundColor: index % 2 === 0 ? '#363941' : '#2B2E35' }}
+                  onClick={() => handleRowClick(entry)}
+                  className="clickable-row"
+                >
+                  <td style={{ overflow: 'visible', textOverflow: 'clip', whiteSpace: 'nowrap', minWidth: '100px' }}>{entry.plateNumber}</td>
+                  <td>{date}</td>
+                  <td>{time}</td>
+                  {!isTableNarrow && (
+                    <td>{extractStateFromVehicleState(entry.vehicleState)}</td>
+                  )}
+                  <td>{entry.vehicleStatus || 'Unknown'}</td>
+                  <td>{entry.confidence}%</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
 
-      {filteredResults.length === 0 ? (
-        <div className="no-data-container">
-          <h3 className="no-results-header">No Results Found</h3>
-          <p>This lot has no ALPR Data available</p>
-        </div>
-      ) : (
-        <div className="clear-all-container">
-          <button className="clear-all-button" onClick={() => setShowClearConfirmModal(true)}>
-            Clear All ({filteredResults.length})
-          </button>
-        </div>
-      )}
-
+        {filteredResults.length === 0 ? (
+          <div className="no-data-container">
+            <h3 className="no-results-header">No Results Found</h3>
+            <p>This lot has no ALPR Data available</p>
+          </div>
+        ) : (
+          <div className="clear-all-container">
+            <button className="clear-all-button" onClick={() => setShowClearConfirmModal(true)}>
+              Clear All ({filteredResults.length})
+            </button>
+          </div>
+        )}
+      </div>
+      
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
