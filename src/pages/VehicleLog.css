@@ -406,10 +406,5 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  padding-bottom: 15px;
   width: 100%;
-}
-
-.vehicle-log-content {
-  padding-top: 10px;
 }
